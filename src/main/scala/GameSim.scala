@@ -17,7 +17,7 @@ abstract class Game(val numDecks: Int) {
 abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
 
   protected[this] var runningState = emptyState
-  private[this] val numTables = 4
+  private[this] val numTables = Runtime.getRuntime.availableProcessors
   private[this] var tablesDone = 0
   private[this] val chunk = 250000
 

@@ -3,7 +3,7 @@ package com.yuvimasory.cardgames
 /* Main */
 object Main {
 
-  val Iters = 1000000
+  val Iters = 100000000
 
   def main(args: Array[String]) = war()
 
