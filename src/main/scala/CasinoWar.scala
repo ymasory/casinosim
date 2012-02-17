@@ -35,7 +35,7 @@ case class GameState(
 ) {
   private[this] val fmt = new java.text.DecimalFormat("###.###")
   private[this] val bigFmt = new java.text.DecimalFormat("###,###,###,###")
-  def houseEdge: Double = (playerNet/iterations) * 100
+  def houseEdge: Double = ((playerNet/iterations) * 100) * -1
   def summary: String =
 """
 CasinoWar after %s iterations using a/an %s
