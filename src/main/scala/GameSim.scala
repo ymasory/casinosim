@@ -4,7 +4,7 @@ import scala.actors.Actor
 
 trait GameState {
   def ++(that: GameState): GameState
-  def summary(shoe: Shoe): String
+  def summary(): String
 }
 abstract class Game(val numDecks: Int) {
   def createShoe: Shoe = {
@@ -48,6 +48,7 @@ abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
       case state: GameState => {
         runningState = runningState ++ state
         println()
+        println(runningState.summary)
         if (tablesDone == numTables) {
           println()
           println("ALL ACTORS DONE")

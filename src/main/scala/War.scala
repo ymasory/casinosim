@@ -41,8 +41,8 @@ case class WarState(
   lazy val playerNet: Int =
     (playerTieWins + playerRegWins) - (dealerRegWins + (dealerTieWins * 2))
 
-  override def summary(shoe: Shoe): String = """
-War after %s iterations using %s
+  override def summary(): String = """
+War after %s
 Player Regular Wins: %s%%
 Dealer Regular Wins: %s%%
 Player Tie Wins: %s%%
@@ -50,7 +50,6 @@ Dealer Tie Wins: %s%%
 House Edge: %s%%
   """.trim.format(
     commaFmt format iterations,
-    shoe.summary,
     decFmt format playerRegularWinPercent,
     decFmt format dealerRegularWinPercent,
     decFmt format playerTieWinPercent,
