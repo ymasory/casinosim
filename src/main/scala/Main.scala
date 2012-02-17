@@ -4,7 +4,9 @@ package com.yuvimasory.cardgames
 object Main {
 
   def main(args: Array[String]) {
-    println("hello cards")
+    val sim = new CasinoWarSim
+    sim.start()
+    sim ! 100000000
   }
 }
 
