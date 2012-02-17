@@ -3,17 +3,22 @@ package com.yuvimasory.cardgames
 import scala.collection.JavaConverters._
 
 /* Shoes */
-case class InfiniteShoe() {
-  def deal: PlayingCard = PlayingCard.next()
-  def summary = "infinite shoe"
+sealed trait Shoe {
+  def deal: PlayingCard
+  def summary: String
 }
-
-sealed trait Cut
-case class CutCard(num: Int) extends Cut
+case class InfiniteShoe() extends Shoe {
+  override def deal: PlayingCard = PlayingCard.next()
+  override def summary = "an infinite shoe"
+}
+case class FiniteShoe(numDecks: Int) extends Shoe {
+  override def deal: PlayingCard = PlayingCard.next()
+  override def summary = "a %s-deck" format numDecks
+}
 
 /* Decks */
 case class AngloDeck private (cards: Seq[PlayingCard]) {
-  def sizeWithCut(): Int = cards.length
+  def size(): Int = cards.length
   def drawCard(): AngloDeck = AngloDeck(cards.tail)
   def shuffle(): AngloDeck = {
     val cardsAsJava = cards.toList.asJava
@@ -67,9 +72,6 @@ case class PlayingCard(suit: Suit, rank: Rank) extends Ordered[PlayingCard] {
 object PlayingCard {
   def next(): PlayingCard = PlayingCard(Suit.next(), Rank.next())
 }
-// case object CutCard extends Card {
-//   override def toString = "<CUT CARD>"
-// }
 
 
 

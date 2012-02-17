@@ -5,16 +5,10 @@ object Main {
 
   val Iters = 1000000
 
-  def main(args: Array[String]) = baccarat()
-
-  def baccarat() {
-    val sim = new BaccaratSim
-    sim start()
-    sim ! Iters
-  }
+  def main(args: Array[String]) = war()
 
   def war() {
-    val sim = new CasinoWarSim
+    val sim = WarSim.mkSim(0)
     sim start()
     sim ! Iters
   }

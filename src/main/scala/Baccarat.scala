@@ -1,3 +1,4 @@
+/*
 package com.yuvimasory.cardgames
 
 import scala.actors.Actor
@@ -109,3 +110,4 @@ class BaccaratSim() extends Actor {
     }
   }
 }
+*/
