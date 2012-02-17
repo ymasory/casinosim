@@ -8,7 +8,7 @@ object Main {
   def main(args: Array[String]) = war()
 
   def war() {
-    val sim = WarSim.mkSim(0)
+    val sim = WarSim next 1
     sim start()
     sim ! Iters
   }

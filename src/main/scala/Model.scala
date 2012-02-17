@@ -1,14 +1,12 @@
 package com.yuvimasory.cardgames
 
-import scala.collection.JavaConverters._
-
 /* Shoes */
 sealed trait Shoe {
   def summary: String
   def draw(n: Int): (Seq[PlayingCard], Shoe)
   def burn(n: Int): Shoe = draw(n)._2
 }
-case class InfiniteShoe() extends Shoe {
+class InfiniteShoe() extends Shoe {
   override def draw(n: Int) = {
     val drawnCards: Seq[PlayingCard] =
       (1 to n).map{ i => PlayingCard.next() }.toSeq
@@ -16,20 +14,39 @@ case class InfiniteShoe() extends Shoe {
   }
   override def summary = "an infinite shoe"
 }
-case class FiniteShoe(numDecks: Int) extends Shoe {
-  override def draw(n: Int) = null
-  override def summary = "a %s-deck" format numDecks
+class FiniteShoe(cards: Seq[PlayingCard], numDecks: Int) extends Shoe {
+
+  override def draw(n: Int) = {
+    val (left, right) = cards splitAt n
+    (left, new FiniteShoe(right, numDecks))
+  }
+
+  override def summary = numDecks match {
+    case 1 => "a single deck"
+    case 2 => "%s decks" format numDecks
+  }
+}
+object FiniteShoe {
+
+  def next(numDecks: Int) = new FiniteShoe(
+    shuffle {
+      (1 to numDecks) flatMap { i => AngloDeck.next.cards }
+    },
+    numDecks
+  )
+
+  private[this] def shuffle(seq: Seq[PlayingCard]): Seq[PlayingCard] = {
+    import scala.collection.JavaConverters._
+    val jList = new java.util.ArrayList(seq.toList.asJava)
+    java.util.Collections shuffle (jList, rand)
+    jList.asScala.toSeq
+  }
 }
 
 /* Decks */
 case class AngloDeck private (cards: Seq[PlayingCard]) {
   def size(): Int = cards.length
   def drawCard(): AngloDeck = AngloDeck(cards.tail)
-  def shuffle(): AngloDeck = {
-    val cardsAsJava = cards.toList.asJava
-    java.util.Collections.shuffle(cardsAsJava, rand)
-    AngloDeck(cardsAsJava.asScala)
-  }
   def remainingCards: Seq[PlayingCard] = cards
 }
 object AngloDeck {
@@ -39,9 +56,7 @@ object AngloDeck {
   }
   val Size = 52
 
-  def next() = nextUnShuffledDeck.shuffle()
-
-  private[this] def nextUnShuffledDeck(): AngloDeck = {
+  def next(): AngloDeck = {
     val cards = {
       for {
         suit <- AllSuits

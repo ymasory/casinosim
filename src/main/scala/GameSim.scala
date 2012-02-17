@@ -6,21 +6,24 @@ trait GameState {
   def ++(that: GameState): GameState
   def summary(shoe: Shoe): String
 }
-abstract class Game(val shoe: Shoe) {
+abstract class Game(val numDecks: Int) {
+  def createShoe: Shoe = {
+    if (numDecks <= 0) new InfiniteShoe()
+    else FiniteShoe.next(numDecks)
+  }
   def play(): GameState
 }
 
 abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
 
   protected[this] var runningState = emptyState
-
-  private[this] val shoe = game.shoe
   private[this] val numTables = 4
   private[this] var tablesDone = 0
   private[this] val chunk = 250000
 
   println()
-  println("playing on %s tables" format numTables)
+  println("playing on %s tables" format numTables)  
+  println("using " + game.createShoe.summary)
 
   def act() = loop {
     react {
@@ -45,7 +48,6 @@ abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
       case state: GameState => {
         runningState = runningState ++ state
         println()
-        println(runningState summary shoe)
         if (tablesDone == numTables) {
           println()
           println("ALL ACTORS DONE")

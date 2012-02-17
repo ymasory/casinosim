@@ -1,7 +1,8 @@
 package com.yuvimasory.cardgames
 
-class War(shoe: Shoe) extends Game(shoe) {
+class War(numDecks: Int) extends Game(numDecks) {
   def play(): WarState = {
+    val shoe = createShoe
     val (Seq(p, d), postDrawShoe) = shoe draw 2
     if (d > p) WarState.dealerRegWin
     else if (d < p) WarState.playerRegWin
@@ -77,9 +78,5 @@ object WarState {
 
 class WarSim(game: Game) extends GameSim(game, WarState.empty)
 object WarSim {
-  def mkSim(decks: Int): WarSim = {
-    val shoe = if (decks <= 0) InfiniteShoe()
-               else FiniteShoe(decks)
-    new WarSim(new War(shoe))
-  }
+  def next(numDecks: Int): WarSim = new WarSim(new War(numDecks))
 }
