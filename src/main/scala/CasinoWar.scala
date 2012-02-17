@@ -8,24 +8,42 @@ object CasinoWar {
     val firstState = GameState.empty
     val finalState =
       (1 to hands).foldLeft(firstState) { (acc: GameState, i: Int) =>
-        // println("starting with player net: " + acc.playerNet)
         val (playerCard, _) = acc.shoe.deal
-        val (dealerCard, postShoe: Shoe[_]) = acc.shoe.deal
-        // println("player's %s vs. dealer's %s" format (playerCard, dealerCard))
-        val playerProfit = (playerCard, dealerCard) match {
+        val (dealerCard, peaceShoe: Shoe[_]) = acc.shoe.deal
+        val (playerProfit, nShoe) = (playerCard, dealerCard) match {
           case (p: PlayingCard, d: PlayingCard) =>
-            if (d > p) -1 else if (d < p) 1 else 0
-          case _      => sys.error("cannot handle cut card")
+            if (d > p)      (-1, peaceShoe)
+            else if (d < p) (1, peaceShoe)
+            else {
+              for (i <- 1 to 3) {
+                val(burn, _) = acc.shoe.deal
+                burn match {
+                  case CutCard     => cutCardBarf
+                  case _: PlayingCard =>
+                }
+              }
+              val (playerWarCard, _) = acc.shoe.deal
+              val (dealerWarCard, warShoe) = acc.shoe.deal
+              (playerWarCard, dealerWarCard) match {
+                case (pw: PlayingCard, dw: PlayingCard) => {
+                  if (dw > pw) (-2, warShoe)
+                  else (1, warShoe)
+                }
+                case _ => cutCardBarf()
+              }
+            }
+          case _      => cutCardBarf()
         }
-        // println("player profited " + playerProfit)
         GameState(
-          shoe=postShoe,
+          shoe=nShoe,
           playerNet=(acc.playerNet + playerProfit),
           iterations=acc.iterations + 1
         )
       }
     finalState
   }
+
+  def cutCardBarf() = sys.error("cannot handle cut card")
 }
 
 case class GameState(

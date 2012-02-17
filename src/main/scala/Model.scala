@@ -20,30 +20,50 @@ object InfiniteShoe {
 sealed trait Cut
 case class CutCard(num: Int) extends Cut
 case object RandomEjection extends Cut
-// case class PhysicalShoe private (decks: Seq[AngloDeck], cut: Cut)
-//   extends Shoe[PhysicalShoe] {
+case class PhysicalShoe private (
+  numDecks: Int, remainingCards: Seq[Card], cut: Cut
+) extends Shoe[PhysicalShoe] {
 
-//   private[this] val remainingCards: Seq[Card] = {
-//     val playingCards = decks.map { _.remainingCards }.flatten
-//     cut match {
-//       case CutCard(numCardsToCut) => {
-//         val splitLoc = playingCards.length - numCardsToCut
-//         val (left, right) = playingCards.splitAt(splitLoc)
-//         (left :+ CutCard) ++ right
-//       }
-//       case RandomEjection => playingCards
-//     }
-//   }
+  val fmt = new java.text.DecimalFormat("###")
 
-//   override def deal: (Card, PhysicalShoe) = (null, null)
-//   override def needsShuffle: Boolean = false
-// }
-// object PhysicalShoe {
-//   def next(numDecks: Int, numCardsToCut: Int): PhysicalShoe = {
-//     val decks = (0 until numDecks).map(i => AngloDeck.next()).toSeq
-//     PhysicalShoe(decks, CutCard(numCardsToCut))
-//   }
-// }
+  override def summary = {
+    val start = "%s deck shoe " format numDecks
+    val end = cut match {
+      case RandomEjection => "continuously shuffled"
+      case CutCard(n)     => {
+        val pen = fmt format (1 - (n.toDouble/AngloDeck.Size.toDouble))
+        "with %s%% penetration" format pen
+      }
+    }
+    start + end
+  }
+  override def deal: (Card, PhysicalShoe) = {
+    val fst = remainingCards.head
+    val tail = remainingCards.tail
+    val nShoe = PhysicalShoe(numDecks, tail, cut)
+    (fst, nShoe)
+  }
+  override def needsShuffle: Boolean = cut match {
+    case RandomEjection => false
+    case CutCard(n)     => false
+  }
+}
+object PhysicalShoe {
+  def next(numDecks: Int, cut: Cut): PhysicalShoe = {
+    val decks = (0 until numDecks).map(i => AngloDeck.next()).toSeq
+    val baseCards: Seq[PlayingCard] = decks.map { _.remainingCards }.flatten
+    val finalCards =
+    cut match {
+      case CutCard(numCardsToCut) => {
+        val splitLoc = baseCards.length - numCardsToCut
+        val (left, right) = baseCards splitAt splitLoc
+        (left :+ CutCard) ++ right
+      }
+      case RandomEjection => baseCards
+    }
+    PhysicalShoe(numDecks, finalCards, cut)
+  }
+}
 
 
 
@@ -64,6 +84,7 @@ object AngloDeck {
   val AllRanks: List[Rank] = Ace :: King :: Queen :: Jack :: {
     { for (i <- 2 to 10) yield NumericRank(i) }.toList
   }
+  val Size = 52
 
   def next() = nextUnShuffledDeck.shuffle()
 
