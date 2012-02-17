@@ -4,15 +4,20 @@ import scala.collection.JavaConverters._
 
 /* Shoes */
 sealed trait Shoe {
-  def deal: PlayingCard
   def summary: String
+  def draw(n: Int): (Seq[PlayingCard], Shoe)
+  def burn(n: Int): Shoe = draw(n)._2
 }
 case class InfiniteShoe() extends Shoe {
-  override def deal: PlayingCard = PlayingCard.next()
+  override def draw(n: Int) = {
+    val drawnCards: Seq[PlayingCard] =
+      (1 to n).map{ i => PlayingCard.next() }.toSeq
+    (drawnCards, this)
+  }
   override def summary = "an infinite shoe"
 }
 case class FiniteShoe(numDecks: Int) extends Shoe {
-  override def deal: PlayingCard = PlayingCard.next()
+  override def draw(n: Int) = null
   override def summary = "a %s-deck" format numDecks
 }
 

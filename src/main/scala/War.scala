@@ -2,16 +2,12 @@ package com.yuvimasory.cardgames
 
 class War(shoe: Shoe) extends Game(shoe) {
   def play(): WarState = {
-    val p = shoe.deal
-    val d = shoe.deal
+    val (Seq(p, d), postDrawShoe) = shoe draw 2
     if (d > p) WarState.dealerRegWin
     else if (d < p) WarState.playerRegWin
     else {
-      for (i <- 1 to 3) {
-        val burn = shoe.deal
-      }
-      val pw = shoe.deal
-      val dw = shoe.deal
+      val postBurnShoe = postDrawShoe burn 3
+      val (Seq(pw, dw), postTieShoe) = postBurnShoe draw 2
       if (dw > pw) WarState.dealerTieWin
       else         WarState.playerTieWin
     }
