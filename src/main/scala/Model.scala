@@ -3,70 +3,13 @@ package com.yuvimasory.cardgames
 import scala.collection.JavaConverters._
 
 /* Shoes */
-trait Shoe[A <: Shoe[_]] {
-  def deal: (Card, A)
-  def needsShuffle: Boolean
-  def summary: String
-}
-case class InfiniteShoe() extends Shoe[InfiniteShoe] {
-  override def deal: (Card, InfiniteShoe) = (PlayingCard.next(), this)
-  override def needsShuffle: Boolean = false
-  override def summary = "infinite shoe"
-}
-object InfiniteShoe {
-  def next = InfiniteShoe()
+case class InfiniteShoe() {
+  def deal: (PlayingCard, InfiniteShoe) = (PlayingCard.next(), this)
+  def summary = "infinite shoe"
 }
 
 sealed trait Cut
 case class CutCard(num: Int) extends Cut
-case object RandomEjection extends Cut
-case class PhysicalShoe private (
-  numDecks: Int, remainingCards: Seq[Card], cut: Cut
-) extends Shoe[PhysicalShoe] {
-
-  val fmt = new java.text.DecimalFormat("###")
-
-  override def summary = {
-    val start = "%s deck shoe " format numDecks
-    val end = cut match {
-      case RandomEjection => "continuously shuffled"
-      case CutCard(n)     => {
-        val pen = fmt format (1 - (n.toDouble/AngloDeck.Size.toDouble))
-        "with %s%% penetration" format pen
-      }
-    }
-    start + end
-  }
-  override def deal: (Card, PhysicalShoe) = {
-    val fst = remainingCards.head
-    val tail = remainingCards.tail
-    val nShoe = PhysicalShoe(numDecks, tail, cut)
-    (fst, nShoe)
-  }
-  override def needsShuffle: Boolean = cut match {
-    case RandomEjection => false
-    case CutCard(n)     => false
-  }
-}
-object PhysicalShoe {
-  def next(numDecks: Int, cut: Cut): PhysicalShoe = {
-    val decks = (0 until numDecks).map(i => AngloDeck.next()).toSeq
-    val baseCards: Seq[PlayingCard] = decks.map { _.remainingCards }.flatten
-    val finalCards =
-    cut match {
-      case CutCard(numCardsToCut) => {
-        val splitLoc = baseCards.length - numCardsToCut
-        val (left, right) = baseCards splitAt splitLoc
-        (left :+ CutCard) ++ right
-      }
-      case RandomEjection => baseCards
-    }
-    PhysicalShoe(numDecks, finalCards, cut)
-  }
-}
-
-
-
 
 /* Decks */
 case class AngloDeck private (cards: Seq[PlayingCard]) {
@@ -103,9 +46,7 @@ object AngloDeck {
 
 
 /* Cards */
-sealed trait Card
-case class PlayingCard(suit: Suit, rank: Rank) extends Card
-  with Ordered[PlayingCard] {
+case class PlayingCard(suit: Suit, rank: Rank) extends Ordered[PlayingCard] {
 
   override def toString = "%s-%s" format (rank.toString, suit.toString)
 
@@ -126,9 +67,9 @@ case class PlayingCard(suit: Suit, rank: Rank) extends Card
 object PlayingCard {
   def next(): PlayingCard = PlayingCard(Suit.next(), Rank.next())
 }
-case object CutCard extends Card {
-  override def toString = "<CUT CARD>"
-}
+// case object CutCard extends Card {
+//   override def toString = "<CUT CARD>"
+// }
 
 
 

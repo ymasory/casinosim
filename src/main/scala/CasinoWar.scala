@@ -9,7 +9,7 @@ object CasinoWar {
     val finalState =
       (1 to hands).foldLeft(firstState) { (acc: GameState, i: Int) =>
         val (playerCard, _) = acc.shoe.deal
-        val (dealerCard, peaceShoe: Shoe[_]) = acc.shoe.deal
+        val (dealerCard, peaceShoe: InfiniteShoe) = acc.shoe.deal
         val (playerProfit, nShoe) = (playerCard, dealerCard) match {
           case (p: PlayingCard, d: PlayingCard) =>
             if (d > p)      (-1, peaceShoe)
@@ -17,22 +17,11 @@ object CasinoWar {
             else {
               for (i <- 1 to 3) {
                 val(burn, _) = acc.shoe.deal
-                burn match {
-                  case CutCard     => cutCardBarf
-                  case _: PlayingCard =>
-                }
               }
-              val (playerWarCard, _) = acc.shoe.deal
-              val (dealerWarCard, warShoe) = acc.shoe.deal
-              (playerWarCard, dealerWarCard) match {
-                case (pw: PlayingCard, dw: PlayingCard) => {
-                  if (dw > pw) (-2, warShoe)
-                  else (1, warShoe)
-                }
-                case _ => cutCardBarf()
-              }
+              val (pw, _) = acc.shoe.deal
+              val (dw, warShoe) = acc.shoe.deal
+              if (dw > pw) (-2, warShoe) else (1, warShoe)
             }
-          case _      => cutCardBarf()
         }
         GameState(
           shoe=nShoe,
@@ -42,8 +31,6 @@ object CasinoWar {
       }
     finalState
   }
-
-  def cutCardBarf() = sys.error("cannot handle cut card")
 }
 
 case class GameState(
@@ -73,7 +60,7 @@ House Edge: %s%%
 }
 
 object GameState {
-  def empty = GameState(InfiniteShoe.next, 0, 0)
+  def empty = GameState(new InfiniteShoe(), 0, 0)
 }
 
 class CasinoWarSim() extends Actor {
