@@ -3,10 +3,20 @@ package com.yuvimasory.cardgames
 /* Main */
 object Main {
 
-  def main(args: Array[String]) {
+  val Iters = 1000000
+
+  def main(args: Array[String]) = baccarat()
+
+  def baccarat() {
+    val sim = new BaccaratSim
+    sim start()
+    sim ! Iters
+  }
+
+  def war() {
     val sim = new CasinoWarSim
-    sim.start()
-    sim ! 100000000
+    sim start()
+    sim ! Iters
   }
 }
 

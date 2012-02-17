@@ -4,66 +4,63 @@ import scala.actors.Actor
 
 object CasinoWar {
 
+  val shoe = InfiniteShoe()
+
   def play(hands: Int): GameState = {
     val firstState = GameState.empty
     val finalState =
       (1 to hands).foldLeft(firstState) { (acc: GameState, i: Int) =>
-        val (playerCard, _) = acc.shoe.deal
-        val (dealerCard, peaceShoe: InfiniteShoe) = acc.shoe.deal
-        val (playerProfit, nShoe) = (playerCard, dealerCard) match {
+        val playerCard = shoe.deal
+        val dealerCard = shoe.deal
+        val playerProfit = (playerCard, dealerCard) match {
           case (p: PlayingCard, d: PlayingCard) =>
-            if (d > p)      (-1, peaceShoe)
-            else if (d < p) (1, peaceShoe)
-            else {
+            if (d > p) -1 else if (d < p) 1 else {
               for (i <- 1 to 3) {
-                val(burn, _) = acc.shoe.deal
+                val burn = shoe.deal
               }
-              val (pw, _) = acc.shoe.deal
-              val (dw, warShoe) = acc.shoe.deal
-              if (dw > pw) (-2, warShoe) else (1, warShoe)
+              val pw = shoe.deal
+              val dw = shoe.deal
+              if (dw > pw) -2 else 1
             }
         }
         GameState(
-          shoe=nShoe,
           playerNet=(acc.playerNet + playerProfit),
           iterations=acc.iterations + 1
         )
       }
     finalState
   }
-}
 
-case class GameState(
-  val shoe: InfiniteShoe,
-  val playerNet: Double,
-  val iterations: Int
-) {
-  private[this] val fmt = new java.text.DecimalFormat("###.###")
-  private[this] val bigFmt = new java.text.DecimalFormat("###,###,###,###")
-  def houseEdge: Double = ((playerNet/iterations) * 100) * -1
-  def summary: String =
-"""
-CasinoWar after %s iterations using a/an %s
-Player Net: %s
-House Edge: %s%%
-""".trim.format(
-     bigFmt format iterations,
-     shoe.summary,
-     playerNet,
-     fmt format houseEdge
-   )
-  def ++(that: GameState): GameState = {
-    if (shoe != that.shoe)
-      sys.error("cannot combine shoes %s and %s" format (shoe, that.shoe))
-    GameState(shoe, playerNet + that.playerNet, iterations + that.iterations)
+  case class GameState(
+    val playerNet: Double,
+    val iterations: Int
+  ) {
+    private[this] val fmt = new java.text.DecimalFormat("###.###")
+    private[this] val bigFmt = new java.text.DecimalFormat("###,###,###,###")
+    def houseEdge: Double = ((playerNet/iterations) * 100) * -1
+    def summary: String =
+      """
+    CasinoWar after %s iterations using a/an %s
+    Player Net: %s
+    House Edge: %s%%
+    """.trim.format(
+      bigFmt format iterations,
+      shoe.summary,
+      playerNet,
+      fmt format houseEdge
+    )
+    def ++(that: GameState): GameState =
+      GameState(playerNet + that.playerNet, iterations + that.iterations)
+  }
+
+  object GameState {
+    def empty = GameState(0, 0)
   }
 }
 
-object GameState {
-  def empty = GameState(new InfiniteShoe(), 0, 0)
-}
 
 class CasinoWarSim() extends Actor {
+  import CasinoWar.GameState
 
   private[this] var runningState: GameState = GameState.empty
   private[this] val numTables = Runtime.getRuntime.availableProcessors
@@ -93,11 +90,10 @@ class CasinoWarSim() extends Actor {
         println()
         println(runningState.summary)
         if (tablesDone == numTables) {
-          println("all threads done")
+          println("all actors done")
           sys.exit(0)
         }
       }
-      case e => Console.err.println("unhandled " + e)
     }
   }
 }

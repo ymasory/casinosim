@@ -4,7 +4,7 @@ import scala.collection.JavaConverters._
 
 /* Shoes */
 case class InfiniteShoe() {
-  def deal: (PlayingCard, InfiniteShoe) = (PlayingCard.next(), this)
+  def deal: PlayingCard = PlayingCard.next()
   def summary = "infinite shoe"
 }
 
