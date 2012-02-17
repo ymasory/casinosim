@@ -10,14 +10,57 @@ class Baccarat(numDecks: Int) extends Game(numDecks) {
     if (natural(pt) && natural(bt)) chooseGreater(bt, pt)
     else if (natural(pt)) BaccaratState.player
     else if (natural(bt)) BaccaratState.banker
-    else BaccaratState.empty
+    else {
+      if (pat(pt)) {
+        if (pat(bt)) chooseGreater(bt, pt)
+        else {
+          val (Seq(b3), _) = postDrawShoe draw 1
+          val bFinal = sum(bt, b3)
+          chooseGreater(bFinal, pt)
+        }
+      }
+      else {
+        val (Seq(p3), postPlayer3Shoe) = postDrawShoe draw 1
+        val pFinal = sum(pt, p3)
+        val bFinal = {
+          val p3Value = p3.rank.baccaratValue
+          if (p3Value == 2 || p3Value == 3) {
+            if (bt >= 0 && bt <= 4) drawFinal(postPlayer3Shoe, bt)
+            else bt
+          }
+          if (p3Value == 4 || p3Value == 5) {
+            if (bt >= 0 && bt <= 5) drawFinal(postPlayer3Shoe, bt)
+            else bt
+          }
+          if (p3Value == 6 || p3Value == 7) {
+            if (bt >= 0 && bt <= 6) drawFinal(postPlayer3Shoe, bt)
+            else bt
+          }
+          if (p3Value == 8) {
+            if (bt >= 0 && bt <= 2) drawFinal(postPlayer3Shoe, bt)
+            else bt
+          }
+          else {
+            if (bt >= 0 && bt <= 3) drawFinal(postPlayer3Shoe, bt)
+            else bt
+          }
+        }
+        chooseGreater(bFinal, pFinal)
+      }
+    }
   }
 
+  def drawFinal(shoe: Shoe, tot: Int): Int = {
+    val (Seq(lastCard), _) = shoe draw 1
+    (tot + lastCard.rank.baccaratValue) % 10
+  }
+  def pat(i: Int) = (i == 6) || (i == 7)
   def chooseGreater(bt: Int, pt: Int) = {
     if (bt > pt) BaccaratState.banker
     else if (pt > bt) BaccaratState.player
     else BaccaratState.tie
   }
+  def sum(i: Int, card: PlayingCard) = i + card.rank.baccaratValue
   def sum(cards: PlayingCard*) = {
     val ints = cards.map{ _.rank.baccaratValue }
     ints.sum % 10
