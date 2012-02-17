@@ -1,7 +1,8 @@
 package com.yuvimasory.cardgames
 
 class War(numDecks: Int) extends Game(numDecks) {
-  def play(): WarState = {
+  override def name: String = "Casino War"
+  override def play(): WarState = {
     val shoe = createShoe
     val (Seq(p, d), postDrawShoe) = shoe draw 2
     if (d > p) WarState.dealerRegWin
@@ -42,12 +43,12 @@ case class WarState(
     (playerTieWins + playerRegWins) - (dealerRegWins + (dealerTieWins * 2))
 
   override def summary(): String = """
-War after %s
-Player Regular Wins: %s%%
-Dealer Regular Wins: %s%%
-Player Tie Wins: %s%%
-Dealer Tie Wins: %s%%
-House Edge: %s%%
+War after %s rounds
+Player regular wins: %s%%
+Dealer regular wins: %s%%
+Player tie wins: %s%%
+Dealer tie wins: %s%%
+House edge: %s%%
   """.trim.format(
     commaFmt format iterations,
     decFmt format playerRegularWinPercent,

@@ -23,7 +23,7 @@ class FiniteShoe(cards: Seq[PlayingCard], numDecks: Int) extends Shoe {
 
   override def summary = numDecks match {
     case 1 => "a single deck"
-    case 2 => "%s decks" format numDecks
+    case n => "%s decks" format n
   }
 }
 object FiniteShoe {
@@ -96,13 +96,16 @@ object PlayingCard {
 
 
 /* Ranks */
-sealed trait Rank
+sealed trait Rank {
+  def baccaratValue: Int
+}
 object Rank {
   val AllRanks: Seq[Rank] =
     Ace.AllRanks ++ Face.AllRanks ++ NumericRank.AllRanks
   def next(): Rank = AllRanks(rand nextInt AllRanks.length)
 }
 case class NumericRank(val rank: Int) extends Rank {
+  override def baccaratValue = rank
   override def toString = rank.toString
 }
 object NumericRank {
@@ -110,6 +113,7 @@ object NumericRank {
 }
 sealed trait NonNumericRank extends Rank
 sealed trait Face extends NonNumericRank {
+  override def baccaratValue = 10
   override def toString = this match {
     case Jack  => "J"
     case Queen => "Q"
@@ -123,6 +127,7 @@ case object Jack extends Face
 case object Queen extends Face
 case object King extends Face
 case object Ace extends NonNumericRank {
+  override def baccaratValue = 1
   override def toString = "A"
   val AllRanks = Seq(Ace)
 }

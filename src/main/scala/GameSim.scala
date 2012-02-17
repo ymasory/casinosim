@@ -7,6 +7,7 @@ trait GameState {
   def summary(): String
 }
 abstract class Game(val numDecks: Int) {
+  def name: String
   def createShoe: Shoe = {
     if (numDecks <= 0) new InfiniteShoe()
     else FiniteShoe.next(numDecks)
@@ -19,10 +20,9 @@ abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
   protected[this] var runningState = emptyState
   private[this] val numTables = Runtime.getRuntime.availableProcessors
   private[this] var tablesDone = 0
-  private[this] val chunk = 250000
 
   println()
-  println("playing on %s tables" format numTables)  
+  println("playing %s on %s tables" format (game.name, numTables))
   println("using " + game.createShoe.summary)
 
   def act() = loop {
@@ -32,6 +32,7 @@ abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
         val share = (iters.toDouble/numTables.toDouble).ceil.toInt
         for (i <- 0 until numTables) yield {
           Actor.actor {
+            val chunk = 250000 min (iters/5).toInt
             val numChunks = (share.toDouble/chunk.toDouble).ceil.toInt
             for (i <- 0 until numChunks) {
               val finalState =

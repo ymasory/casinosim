@@ -1,113 +1,90 @@
-/*
 package com.yuvimasory.cardgames
 
-import scala.actors.Actor
-
-object Baccarat {
-
-  val shoe = InfiniteShoe()
-
-  def play(hands: Int): GameState = {
-    val firstState = GameState.empty
-    val finalState =
-      (1 to hands).foldLeft(firstState) { (acc: GameState, i: Int) =>
-        
-      }
-    finalState
+class Baccarat(numDecks: Int) extends Game(numDecks) {
+  override def name = "Baccarat (Punto Banco)"
+  override def play(): BaccaratState = {
+    val shoe = createShoe
+    val (Seq(p1, p2, b1, b2), postDrawShoe) = shoe draw 4
+    val pt = sum(p1, p2)
+    val bt = sum(b1, b2)
+    if (natural(pt) && natural(bt)) chooseGreater(bt, pt)
+    else if (natural(pt)) BaccaratState.player
+    else if (natural(bt)) BaccaratState.banker
+    else BaccaratState.empty
   }
 
-  case class GameState(
-    val playerWins: Int,
-    val bankerWins: Int,
-    val ties: Int
-  ) {
-    private[this] val fmt = new java.text.DecimalFormat("###.###")
+  def chooseGreater(bt: Int, pt: Int) = {
+    if (bt > pt) BaccaratState.banker
+    else if (pt > bt) BaccaratState.player
+    else BaccaratState.tie
+  }
+  def sum(cards: PlayingCard*) = {
+    val ints = cards.map{ _.rank.baccaratValue }
+    ints.sum % 10
+  }
+  def natural(i: Int) = i == 9 || i == 8
+}
 
-    val iterations = playerWins + bankerWins + ties
-    val bankerNet: Int = {
-      val bankerLosses = iterations - bankerWins - ties
-      iterations - bankerLosses + (bankerWins * 0.95).floor.toInt
-    }
-    val tieNet = {
-      val tieLosses = iterations - bankerWins - playerWins
-      iterations - tieLosses + ties * 8
-    }
-    val playerNet = {
-      val playerLosses = iterations - bankerWins - ties
-      iterations - playerLosses + playerWins
-    }
+case class BaccaratState(
+  val bankerWins: Int,
+  val playerWins: Int,
+  val ties: Int
+) extends GameState {
 
-    def summary: String =
-"""
-Baccarat after %s iterations using a/an %s
-Player won: %s%%
+  lazy val iterations = bankerWins + playerWins + ties
+  lazy val playerWinPercent: Double =
+    (playerWins.toDouble / iterations.toDouble) * 100
+  lazy val bankerWinPercent: Double =
+    (bankerWins.toDouble / iterations.toDouble) * 100
+  lazy val tiePercent: Double =
+    (ties.toDouble / iterations.toDouble) * 100
+
+  lazy val tieHouseEdge =
+    (-1 * tieNet.toDouble / iterations.toDouble) * 100
+  lazy val playerHouseEdge =
+    (-1 * playerNet.toDouble / iterations.toDouble) * 100
+  lazy val bankerHouseEdge =
+    (-1 * bankerNet.toDouble / iterations.toDouble) * 100
+
+  lazy val tieNet = {
+    val tieLosses = iterations - playerWins - bankerWins
+    ties * 8 - tieLosses
+  }
+  lazy val playerNet = playerWins - bankerWins
+  lazy val bankerNet = bankerWins * 0.95 - playerWins
+
+  override def summary(): String = """
+Baccarat after %s rounds
+Player wins: %s%%
 Player house edge: %s%%
-Banker won: %s%%
+Banker wins: %s%%
 Banker house edge: %s%%
-Ties: %s%%
+Tie: %s%%
 Tie house edge: %s%%
-""".trim.format(
-     iterations,
-     shoe,
-     winsPercentStr(playerWins),
-     edgeStr(playerNet),
-     winsPercentStr(bankerWins),
-     edgeStr(bankerNet),
-     winsPercentStr(ties),
-     edgeStr(tieNet)
-   )
-    private[this] def winsPercentStr(wins: Int) =
-      fmt format { (wins.toDouble / iterations.toDouble) * 100 }
-
-    private[this] def edgeStr(net: Int) =
-      fmt format (1 - (iterations.toDouble / net.toDouble))
-
-    def ++(that: GameState): GameState = GameState(
-      playerWins + that.playerWins,
-      bankerWins + that.bankerWins,
-      ties + that.ties
+  """.trim.format(
+    commaFmt format iterations,
+    decFmt format playerWinPercent,
+    decFmt format playerHouseEdge,
+    decFmt format bankerWinPercent,
+    decFmt format bankerHouseEdge,
+    decFmt format tiePercent,
+    decFmt format tieHouseEdge
+  )
+  override def ++(g: GameState): BaccaratState = {
+    val that = g.asInstanceOf[BaccaratState]
+    BaccaratState(
+      bankerWins = bankerWins + that.bankerWins,
+      playerWins = playerWins + that.playerWins,
+      ties = ties + that.ties
     )
   }
-
-  object GameState {
-    def empty = GameState(0, 0, 0)
-  }
 }
 
-class BaccaratSim() extends Actor {
-  import Baccarat.GameState
-
-  private[this] var runningState: GameState = GameState.empty
-  private[this] val numTables = Runtime.getRuntime.availableProcessors
-  private[this] var tablesDone = 0
-
-  def act() = loop {
-    react {
-      case iters: Int => {
-        println("%s iters requested" format iters)
-        val share = (iters.toDouble/numTables.toDouble).ceil.toInt
-        for (i <- 0 until numTables) yield {
-          Actor.actor {
-            val chunk = 250000
-            val numChunks = (share.toDouble/chunk.toDouble).ceil.toInt
-            for (i <- 0 until numChunks) {
-              val state = Baccarat play chunk
-              this ! state
-            }
-            tablesDone += 1
-          }
-        }
-      }
-      case state: GameState => {
-        runningState = runningState ++ state
-        println()
-        println(runningState.summary)
-        if (tablesDone == numTables) {
-          println("all actors done")
-          sys.exit(0)
-        }
-      }
-    }
-  }
+object BaccaratState {
+  def empty = BaccaratState(0, 0, 0)
+  def banker = BaccaratState(1, 0, 0)
+  def player = BaccaratState(0, 1, 0)
+  def tie = BaccaratState(0, 0, 1)
 }
-*/
+
+class BaccaratSim() extends GameSim(new Baccarat(6), BaccaratState.empty)
