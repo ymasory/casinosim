@@ -1,6 +1,6 @@
-package com.yuvimasory.cardgames
+package com.yuvimasory.casinosim
 
-class War(numDecks: Int) extends Game(numDecks) {
+class War(numDecks: Int) extends CardGame(numDecks) {
   override def name: String = "Casino War"
   override def play(): WarState = {
     val shoe = createShoe

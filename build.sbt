@@ -13,9 +13,9 @@ scalacOptions ++= Seq("-deprecation", "-unchecked")
 javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation")
 
 //ENTRY POINT
-mainClass in (Compile, packageBin) := Some("com.yuvimasory.cardgames.Main")
+mainClass in (Compile, packageBin) := Some("com.yuvimasory.casinosim.Main")
 
-mainClass in (Compile, run) := Some("com.yuvimasory.cardgames.Main")
+mainClass in (Compile, run) := Some("com.yuvimasory.casinosim.Main")
 
 //SCALA DEPENDENCIES
 //only uncomment if you need dependencies from the snapshots repo

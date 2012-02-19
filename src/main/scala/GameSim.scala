@@ -1,4 +1,4 @@
-package com.yuvimasory.cardgames
+package com.yuvimasory.casinosim
 
 import scala.actors.Actor
 
@@ -6,14 +6,18 @@ trait GameState {
   def ++(that: GameState): GameState
   def summary(): String
 }
-abstract class Game(val numDecks: Int) {
+sealed trait Game {
   def name: String
+  def play(): GameState
+}
+
+abstract class CardGame(val numDecks: Int) extends Game {
   def createShoe: Shoe = {
     if (numDecks <= 0) new InfiniteShoe()
     else FiniteShoe.next(numDecks)
   }
-  def play(): GameState
 }
+trait DiceGame extends Game
 
 abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
 
@@ -23,7 +27,10 @@ abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
 
   println()
   println("playing %s on %s tables" format (game.name, numTables))
-  println("using " + game.createShoe.summary)
+  game match {
+    case cardGame: CardGame => println("using " + cardGame.createShoe.summary)
+    case _ =>
+  }
 
   def act() = loop {
     react {

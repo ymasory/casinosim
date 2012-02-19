@@ -1,6 +1,6 @@
-package com.yuvimasory.cardgames
+package com.yuvimasory.casinosim
 
-class Baccarat(numDecks: Int) extends Game(numDecks) {
+class Baccarat(numDecks: Int) extends CardGame(numDecks) {
   override def name = "Baccarat (Punto Banco)"
   override def play(): BaccaratState = {
     val shoe = createShoe

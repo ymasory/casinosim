@@ -1,4 +1,4 @@
-package com.yuvimasory.cardgames
+package com.yuvimasory.casinosim
 
 /* Main */
 object Main {

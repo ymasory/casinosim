@@ -1,4 +1,9 @@
-package com.yuvimasory.cardgames
+package com.yuvimasory.casinosim
+
+/* Dice */
+object Die {
+  def roll(): Byte = (rand.nextInt(6) + 1).toByte
+}
 
 /* Shoes */
 sealed trait Shoe {
