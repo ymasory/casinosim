@@ -1,5 +1,5 @@
 //BASIC PROJECT INFO
-name := "card-games"
+name := "casinosim"
 
 organization := "com.yuvimasory"
 
