@@ -4,7 +4,7 @@ class War(deckDesc: DeckDescription) extends CardGame(deckDesc) {
 
   override val name: String = "Casino War"
   override val key = Some(
-    "player1 dealer1  burn1 burn2 burn3  player2 dealer2"
+    "player1 dealer1 - burn1 burn2 burn3 - player2 dealer2"
   )
 
   override def play(): WarRound = {
@@ -22,9 +22,9 @@ class War(deckDesc: DeckDescription) extends CardGame(deckDesc) {
   case class WarRound(outcome: WarOutcome) extends GameRound {
     override val repr = {
       outcome match {
-        case SimpleOutcome(p, d) => "%s %s" format (p, d)
+        case SimpleOutcome(p, d) => "%s - %s" format (p, d)
         case GoToWarOutcome((p1, p2), (d1, d2), (b1, b2, b3)) =>
-          "%s %s  %s %s %s  %s %s" format (p1, d1, b1, b2, b3, p2, d2)
+          "%s %s - %s %s %s - %s %s" format (p1, d1, b1, b2, b3, p2, d2)
       }
     }
   }

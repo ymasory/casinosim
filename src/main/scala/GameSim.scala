@@ -4,7 +4,6 @@ import java.io.{ BufferedWriter, File, FileWriter }
 import scala.actors.Actor
 
 sealed trait Game {
-  val desc: String
   val name: String
   val key: Option[String] = None
   def play(): GameRound
@@ -13,23 +12,14 @@ sealed trait Game {
   }
 }
 
-abstract class CardGame(deckDesc: DeckDescription) extends Game {
-  override val desc = "%s with %s decks" format (
-    name,
-    deckDesc match {
-      case FiniteDecks(n) => n.toString
-      case InfiniteDecks  => "an infinite number of"
-    }
-  )
+abstract class CardGame(val deckDesc: DeckDescription) extends Game {
   protected[this] def createShoe(): Shoe = deckDesc match {
     case FiniteDecks(n) => FiniteShoe next n
     case InfiniteDecks  => InfiniteShoe next()
   }
 }
 
-trait DiceGame extends Game{
-  override val desc = name
-}
+trait DiceGame extends Game
 
 class GameSim(game: Game, rounds: Int, outFile: File) {
 
@@ -68,6 +58,10 @@ class GameSim(game: Game, rounds: Int, outFile: File) {
 
     private[this] lazy val out = new BufferedWriter(new FileWriter(outFile))
     out write { "# playing %s on %s tables%n" format (game.name, numTables) }
+    game match {
+      case c: CardGame => out write { "# using %s%n" format c.deckDesc }
+      case _ =>
+    }
     out write { "# %s rounds requested%n" format rounds }
     out write { "# actually running %s rounds%n" format trueNumRounds }
     game.key match {

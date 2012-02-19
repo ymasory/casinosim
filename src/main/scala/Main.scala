@@ -13,25 +13,26 @@ object Main {
       Console.err println()
       Console.err println "6 decks is assumed if not specified for a card game"
       Console.err println "Available games: craps, baccarat, war"
+      sys exit 1
     }
     val (game, rounds, file) = {
       try {
-        val Array(gameName, roundsStr, fileName) = args
+        val Array(gameName, roundsStr, fileName, _*) = args
         val file = new File(fileName)
         val deckDesc = if (args.length < 4) FiniteDecks(6)
                        else DeckDescription fromInt args(3).toInt
         val rounds = roundsStr.toInt
         val game =
           gameName match {
-            case "craps" => new Craps()
-            case "war"   => new War(deckDesc)
+            case "craps"    => new Craps()
+            case "war"      => new War(deckDesc)
+            case "baccarat" => new Baccarat(deckDesc)
           }
         (game, rounds, file)
       }
       catch {
         case e => {
           Console.err println "error parsing arguments"
-          Console.err println e.getMessage
           sys exit 1
         }
       }

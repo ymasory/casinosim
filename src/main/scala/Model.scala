@@ -55,7 +55,12 @@ object FiniteShoe {
 }
 
 /* Decks */
-sealed trait DeckDescription
+sealed trait DeckDescription {
+  override def toString = this match {
+    case FiniteDecks(n) => n.toString + " decks"
+    case InfiniteDecks  => "an infinite number of decks"
+  }
+}
 object DeckDescription {
   def fromInt(n: Int) = if (n <= 0) InfiniteDecks else FiniteDecks(n)
 }
@@ -88,13 +93,6 @@ object AngloDeck {
   }
 }
 
-/* Hand */
-case class Hand(cards: List[Card]) {
-  def bacc = cards.foldLeft(0) { (acc: Int, el: Card) =>
-    (acc + el.bacc) % 10
-  }
-}
-
 /* Cards */
 case class Card(suit: Suit, rank: Rank) {
   def bacc = rank.bacc
@@ -116,7 +114,7 @@ object Rank {
   def next(): Rank = AllRanks(rand nextInt AllRanks.length)
 }
 case class NumericRank(val rank: Int) extends Rank {
-  override def bacc = rank
+  override def bacc = rank % 10
   override def war = rank
   override def toString = rank.toString
 }
