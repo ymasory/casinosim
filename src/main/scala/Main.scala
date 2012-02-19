@@ -4,7 +4,9 @@ import java.io.File
 
 object Main {
 
-  def main(args: Array[String]) = {
+  // def main(args: Array[String]) = CrapsAnalyzer analyze new File("craps.sim")
+
+  def main(args: Array[String]) {
     if (args.length < 3 || args.length > 4) {
       Console.err println "Usage: java -jar casinosim.jar game rounds file [num decks]"
       Console.err println()
