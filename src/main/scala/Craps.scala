@@ -61,26 +61,16 @@ object CrapsAnalyzer {
 
   def analyze(file: java.io.File) = {
     val reader = new java.io.BufferedReader(new java.io.FileReader(file))
-    val results = this loop reader
+    val stats = this loop reader
 
-    val total = results.length.toDouble
-    val (passWins, passLoses, dontWins, dontPushes) = {
-      var pw, pl, dw, dp = 0
-      results foreach { res =>
-        res match {
-          case _: ShooterWin        => pw += 1
-          case loss: ShooterLoss    => {
-            pl += 1
-            loss match {
-              case SevenOut | CrapOut23 => dw += 1
-              case CrapOut12            => dp += 1
-            }
-          }
-        }
-      }
+    val passWins = stats.passWins.toDouble
+    val passLoses = stats.passLoses.toDouble
+    val dontWins = stats.dontWins.toDouble
+    val dontPushes = stats.dontPushes.toDouble
 
-      (pw.toDouble, pl.toDouble, dw.toDouble, dp.toDouble)
-    }
+    val total = passWins + passLoses
+    println("TOTAL ROLLS: " + (commaFmt format total))
+    println()
 
     println("PASS BET")
     val passWinPercent = passWins/total * 100
@@ -102,12 +92,11 @@ object CrapsAnalyzer {
     println("don't pass house advantage: %s%%" format dontHouseEdge) 
   }
 
-  private[this] def loop(
-    in: BufferedReader, results: List[ShooterResult] = Nil): List[ShooterResult] = {
+  private[this] def loop(in: BufferedReader, stats: Stats = Stats.empty): Stats = {
      Option(in readLine()) match {
        case Some(line) => {
          val skip = line startsWith "#"
-         if (skip) loop(in, results)
+         if (skip) loop(in, stats)
          else {
            val rollStrs: Vector[String] = Vector.empty ++ (Pat findAllIn line)
            val rolls: List[CrapsRoll] = rollStrs.map { s =>
@@ -118,10 +107,10 @@ object CrapsAnalyzer {
              CrapsRoll(b1, b2)
            }.toList
            val res = ShooterResult fromRolls rolls
-           loop(in, res :: results)
+           loop(in, stats :+ res)
          }
        }
-       case None => results
+       case None => stats
      }
   }
 
@@ -140,6 +129,38 @@ object CrapsAnalyzer {
       }
     }
   }
+
+  case class Stats(
+    val passWins: Int,
+    val passLoses: Int,
+    val dontWins: Int,
+    val dontPushes: Int
+  ) {
+    def :+(res: ShooterResult): Stats = {
+      val (pw, dw, dp) = res match {
+        case _: ShooterWin        => (true, false, false)
+        case loss: ShooterLoss    => {
+          val dw =
+            loss match {
+              case SevenOut | CrapOut23 => true
+              case CrapOut12            => false
+            }
+          (false, dw, !dw)
+        }
+      }
+      Stats(
+        passWins = passWins + { if (pw) 1 else 0 },
+        passLoses = passLoses + { if (pw) 0 else 1 },
+        dontWins = dontWins  + { if (dw) 1 else 0 },
+        dontPushes = dontPushes + { if (dp) 1 else 0 }
+      )
+    }
+  }
+
+  object Stats {
+    val empty = Stats(0, 0, 0, 0)
+  }
+
   sealed trait ShooterResult
   sealed trait ShooterWin extends ShooterResult
   case object ComeOutWin extends ShooterWin
