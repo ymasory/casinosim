@@ -57,16 +57,32 @@ object Shooter {
 object CrapsAnalyzer {
   import java.io.BufferedReader
 
-  val Pat = """\d/\d""".r
+  private[this] val Pat = """\d/\d""".r
 
   def analyze(file: java.io.File) = {
     val reader = new java.io.BufferedReader(new java.io.FileReader(file))
     val results = this loop reader
+
     val total = results.length.toDouble
+    val (passWins, passLoses, dontWins, dontPushes) = {
+      var pw, pl, dw, dp = 0
+      results foreach { res =>
+        res match {
+          case _: ShooterWin        => pw += 1
+          case loss: ShooterLoss    => {
+            pl += 1
+            loss match {
+              case SevenOut | CrapOut23 => dw += 1
+              case CrapOut12            => dp += 1
+            }
+          }
+        }
+      }
+
+      (pw.toDouble, pl.toDouble, dw.toDouble, dp.toDouble)
+    }
 
     println("PASS BET")
-    val passWins = { results count { _.isInstanceOf[ShooterWin] } }.toDouble
-    val passLoses = { results count { _.isInstanceOf[ShooterLoss] } }.toDouble
     val passWinPercent = passWins/total * 100
     val passLossPercent = passLoses/total * 100
     val passHouseEdge = passLossPercent - passWinPercent
@@ -76,12 +92,6 @@ object CrapsAnalyzer {
 
     println()
     println("DON'T PASS BET")
-    val dontWins = {
-      results count { r =>
-        r == SevenOut || r == CrapOut23
-      }
-    }.toDouble
-    val dontPushes = { results count { _ == CrapOut12 } }.toDouble
     val dontWinPercent = dontWins/total * 100
     val dontPushPercent = dontPushes/total * 100
     val dontLossPercent = passWinPercent
