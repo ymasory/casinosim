@@ -1,6 +1,6 @@
 package com.yuvimasory.casinosim
 
-class Craps() extends DiceGame[CrapsRound]() {
+class Craps() extends DiceGame() {
 
   override val name = "Craps"
 
@@ -15,10 +15,14 @@ class Craps() extends DiceGame[CrapsRound]() {
       }
     }
   }
+
+  case class CrapsRound(val rolls: List[CrapsRoll]) extends GameRound {
+    override def repr = rolls.map(_.repr).mkString(" ")
+  }
 }
 
 case class CrapsRoll(val b1: Byte, val b2: Byte) {
-  lazy val repr = "%s/%s" format (b1, b2)
+  def repr = "%s/%s" format (b1, b2)
   lazy val sum = b1 + b2
   def comeoutResult = sum match {
     case 7 | 11     => Winner
@@ -40,10 +44,6 @@ case class PointSet(p: Int) extends ComeoutResult {
       case n       => this resolvePoint allRolls
     }
   }
-}
-
-case class CrapsRound(val rolls: List[CrapsRoll]) extends GameRound {
-  override val repr = rolls.map(_.repr).mkString(" ")
 }
 
 object Shooter {

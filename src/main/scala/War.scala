@@ -1,84 +1,42 @@
-/*
 package com.yuvimasory.casinosim
 
-class War(numDecks: Int) extends CardGame(numDecks) {
-  override def name: String = "Casino War"
-  override def play(): WarState = {
-    val shoe = createShoe
-    val (Seq(p, d), postDrawShoe) = shoe draw 2
-    if (d > p) WarState.dealerRegWin
-    else if (d < p) WarState.playerRegWin
-    else {
-      val postBurnShoe = postDrawShoe burn 3
-      val (Seq(pw, dw), postTieShoe) = postBurnShoe draw 2
-      if (dw > pw) WarState.dealerTieWin
-      else         WarState.playerTieWin
+class War(deckDesc: DeckDescription) extends CardGame(deckDesc) {
+
+  override val name: String = "Casino War"
+  override val key = Some(
+    "player1 dealer1  burn1 burn2 burn3  player2 dealer2"
+  )
+
+  override def play(): WarRound = {
+    val (p1, d1, postDrawShoe) = createShoe().draw2()
+    val outcome =
+      if (p1.war != d1.war) SimpleOutcome(p1, d1)
+      else {
+        val (b1, b2, b3, postBurnShoe) = postDrawShoe draw3()
+        val (p2, d2, _) = postBurnShoe draw2()
+        GoToWarOutcome((p1, p2), (d1, d2), (b1, b2, b3))
+      }
+    WarRound(outcome)
+  }
+
+  case class WarRound(outcome: WarOutcome) extends GameRound {
+    override val repr = {
+      outcome match {
+        case SimpleOutcome(p, d) => "%s %s" format (p, d)
+        case GoToWarOutcome((p1, p2), (d1, d2), (b1, b2, b3)) =>
+          "%s %s  %s %s %s  %s %s" format (p1, d1, b1, b2, b3, p2, d2)
+      }
     }
   }
+
+  sealed trait WarOutcome
+  case class SimpleOutcome(
+    val pCard: Card,
+    val dCard: Card
+  ) extends WarOutcome
+  case class GoToWarOutcome(
+    val pCards: Pair[Card, Card],
+    val dCards: Pair[Card, Card],
+    val burns: Triple[Card, Card, Card]
+  ) extends WarOutcome
 }
-
-case class WarState(
-  val playerRegWins: Int,
-  val playerTieWins: Int,
-  val dealerRegWins: Int,
-  val dealerTieWins: Int
-) extends GameState {
-
-  lazy val iterations =
-    playerRegWins + playerTieWins + dealerRegWins + dealerTieWins
-
-  lazy val regularWins = playerRegWins + dealerRegWins
-  lazy val tieWins = playerTieWins + dealerTieWins
-  lazy val playerRegularWinPercent: Double =
-    (playerRegWins.toDouble / regularWins.toDouble) * 100
-  lazy val dealerRegularWinPercent: Double =
-    (dealerRegWins.toDouble / regularWins.toDouble) * 100
-  lazy val dealerTieWinPercent: Double =
-    (dealerTieWins.toDouble / tieWins.toDouble) * 100
-  lazy val playerTieWinPercent: Double =
-    (playerTieWins.toDouble / tieWins.toDouble) * 100
-
-  lazy val houseEdgePercent: Double =
-    (-1 * playerNet.toDouble / iterations.toDouble) * 100
-  lazy val playerNet: Int =
-    (playerTieWins + playerRegWins) - (dealerRegWins + (dealerTieWins * 2))
-
-  override def summary(): String = """
-War after %s rounds
-Player regular wins: %s%%
-Dealer regular wins: %s%%
-Player tie wins: %s%%
-Dealer tie wins: %s%%
-House edge: %s%%
-  """.trim.format(
-    commaFmt format iterations,
-    decFmt format playerRegularWinPercent,
-    decFmt format dealerRegularWinPercent,
-    decFmt format playerTieWinPercent,
-    decFmt format dealerTieWinPercent,
-    decFmt format houseEdgePercent
-  )
-  override def ++(g: GameState): WarState = {
-    val that = g.asInstanceOf[WarState]
-    WarState(
-      playerRegWins + that.playerRegWins,
-      playerTieWins + that.playerTieWins,
-      playerRegWins + that.dealerRegWins,
-      dealerTieWins + that.dealerTieWins
-    )
-  }
-}
-
-object WarState {
-  def empty = WarState(0, 0, 0, 0)
-  val playerTieWin = WarState(0, 1, 0, 0)
-  val dealerTieWin = WarState(0, 0, 0, 1)
-  val playerRegWin = WarState(1, 0, 0, 0)
-  val dealerRegWin = WarState(0, 0, 1, 0)
-}
-
-class WarSim(game: Game) extends GameSim(game, WarState.empty)
-object WarSim {
-  def next(numDecks: Int): WarSim = new WarSim(new War(numDecks))
-}
-*/

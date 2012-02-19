@@ -3,28 +3,35 @@ package com.yuvimasory.casinosim
 import java.io.{ BufferedWriter, File, FileWriter }
 import scala.actors.Actor
 
-trait GameRound {
-  def repr: String
-}
-
-sealed trait Game[A <: GameRound] {
+sealed trait Game {
   val desc: String
   val name: String
-  def play(): A
+  val key: Option[String] = None
+  def play(): GameRound
+  trait GameRound {
+    def repr: String
+  }
 }
 
-abstract class CardGame[A <: GameRound](val numDecks: Int) extends Game[A] {
-  override val desc = "%s with %s decks" format (name, numDecks)
-  protected[this] def createShoe(): Shoe =
-    if (numDecks <= 0) new InfiniteShoe()
-    else FiniteShoe.next(numDecks)
+abstract class CardGame(deckDesc: DeckDescription) extends Game {
+  override val desc = "%s with %s decks" format (
+    name,
+    deckDesc match {
+      case FiniteDecks(n) => n.toString
+      case InfiniteDecks  => "an infinite number of"
+    }
+  )
+  protected[this] def createShoe(): Shoe = deckDesc match {
+    case FiniteDecks(n) => FiniteShoe next n
+    case InfiniteDecks  => InfiniteShoe next()
+  }
 }
 
-trait DiceGame[A <: GameRound] extends Game[A] {
+trait DiceGame extends Game{
   override val desc = name
 }
 
-abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File) {
+class GameSim(game: Game, rounds: Int, outFile: File) {
 
   private[this] val numTables = Runtime.getRuntime.availableProcessors
   val (roundsPerChunk, numChunks) = {
@@ -47,7 +54,7 @@ abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File
       Actor.actor {
         for (i <- 0 until numChunks) {
           val rounds =
-            (0 until roundsPerChunk).foldLeft(Nil: List[A]) { (acc, _) =>                
+            (0 until roundsPerChunk).foldLeft(Nil: List[game.GameRound]) { (acc, _) =>
               (game play()) :: acc
             }
           WriterActor ! rounds
@@ -63,6 +70,10 @@ abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File
     out write { "# playing %s on %s tables%n" format (game.name, numTables) }
     out write { "# %s rounds requested%n" format rounds }
     out write { "# actually running %s rounds%n" format trueNumRounds }
+    game.key match {
+      case Some(key) => out write { "# format: %s%n" format key }
+      case None =>
+    }
     out write { "# %n" format() }
 
     private[this] var tablesDone = 0
@@ -77,8 +88,8 @@ abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File
             System.exit(0)
           }
           else {
-            val rounds = uRounds.asInstanceOf[List[A]]
-            rounds foreach { r =>
+            val rounds = uRounds.asInstanceOf[List[game.GameRound]]
+            for (r <- rounds) {
               out write r.repr
               out newLine()
             }

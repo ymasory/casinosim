@@ -7,118 +7,130 @@ object Die {
 
 /* Shoes */
 sealed trait Shoe {
-  def summary: String
-  def draw(n: Int): (Seq[PlayingCard], Shoe)
-  def burn(n: Int): Shoe = draw(n)._2
+  def draw1(): (Card, Shoe)
+  def draw2(): (Card, Card, Shoe)
+  def draw3(): (Card, Card, Card, Shoe)
+  def draw(n: Int): (List[Card], Shoe)
 }
-class InfiniteShoe() extends Shoe {
+
+class InfiniteShoe private () extends Shoe {
+  override def draw1() = (Card.next(), this)
+  override def draw2() = (Card.next(), Card.next(), this)
+  override def draw3() = (Card.next(), Card.next(), Card.next(), this)
   override def draw(n: Int) = {
-    val drawnCards: Seq[PlayingCard] =
-      (1 to n).map{ i => PlayingCard.next() }.toSeq
+    val drawnCards: List[Card] =
+      (1 to n).map{ _ => Card.next() }.toList
     (drawnCards, this)
   }
-  override def summary = "an infinite shoe"
 }
-class FiniteShoe(cards: Seq[PlayingCard], numDecks: Int) extends Shoe {
+object InfiniteShoe {
+  def next() = new InfiniteShoe
+}
 
+class FiniteShoe private (cards: List[Card]) extends Shoe {
+  override def draw1() = {
+    val (List(card), shoe) = draw(1)
+    (card, shoe)
+  }
+  override def draw2() = {
+    val (List(card1, card2), shoe) = draw(2)
+    (card1, card2, shoe)
+  }
+  override def draw3() = {
+    val (List(card1, card2, card3), shoe) = draw(3)
+    (card1, card2, card3, shoe)
+  }
   override def draw(n: Int) = {
     val (left, right) = cards splitAt n
-    (left, new FiniteShoe(right, numDecks))
-  }
-
-  override def summary = numDecks match {
-    case 1 => "a single deck"
-    case n => "%s decks" format n
+    (left, new FiniteShoe(right))
   }
 }
+
 object FiniteShoe {
 
-  def next(numDecks: Int) = new FiniteShoe(
-    shuffle {
-      (1 to numDecks) flatMap { i => AngloDeck.next.cards }
-    },
-    numDecks
-  )
-
-  private[this] def shuffle(seq: Seq[PlayingCard]): Seq[PlayingCard] = {
-    import scala.collection.JavaConverters._
-    val jList = new java.util.ArrayList(seq.toList.asJava)
-    java.util.Collections shuffle (jList, rand)
-    jList.asScala.toSeq
+  def next(numDecks: Int) = {
+    val cards = (1 to numDecks).flatMap { _ => AngloDeck.next.cards }.toList
+    new FiniteShoe(cards)
   }
 }
 
 /* Decks */
-case class AngloDeck private (cards: Seq[PlayingCard]) {
-  def size(): Int = cards.length
-  def drawCard(): AngloDeck = AngloDeck(cards.tail)
-  def remainingCards: Seq[PlayingCard] = cards
+sealed trait DeckDescription
+object DeckDescription {
+  def fromInt(n: Int) = if (n <= 0) InfiniteDecks else FiniteDecks(n)
 }
+case class FiniteDecks(n: Int) extends DeckDescription
+case object InfiniteDecks extends DeckDescription
+
+case class AngloDeck private (val cards: List[Card])
 object AngloDeck {
   val AllSuits: List[Suit] = List(Hearts, Diamonds, Spades, Clubs)
   val AllRanks: List[Rank] = Ace :: King :: Queen :: Jack :: {
     { for (i <- 2 to 10) yield NumericRank(i) }.toList
   }
-  val Size = 52
 
   def next(): AngloDeck = {
     val cards = {
       for {
         suit <- AllSuits
         rank <- AllRanks } yield {
-          PlayingCard(suit, rank)
+          Card(suit, rank)
         }
-    }.toSeq
-    AngloDeck(cards)
+    }.toList
+    AngloDeck(shuffle(cards))
+  }
+
+  private[this] def shuffle(cards: List[Card]): List[Card] = {
+    import scala.collection.JavaConverters._
+    val jList = new java.util.ArrayList(cards.asJava)
+    java.util.Collections shuffle (jList, rand)
+    jList.asScala.toList
   }
 }
 
-
+/* Hand */
+case class Hand(cards: List[Card]) {
+  def bacc = cards.foldLeft(0) { (acc: Int, el: Card) =>
+    (acc + el.bacc) % 10
+  }
+}
 
 /* Cards */
-case class PlayingCard(suit: Suit, rank: Rank) extends Ordered[PlayingCard] {
-
-  override def toString = "%s-%s" format (rank.toString, suit.toString)
-
-  private def sortingNum = rank match {
-    case NumericRank(n) => n
-    case Jack           => 11
-    case Queen          => 12
-    case King           => 13
-    case Ace            => 14
-  }
-
-  override def compare(that: PlayingCard) = {
-    val thisNum = sortingNum
-    val thatNum = that.sortingNum
-    if (thisNum < thatNum) -1 else if (thisNum > thatNum) 1 else 0
-  }
+case class Card(suit: Suit, rank: Rank) {
+  def bacc = rank.bacc
+  def war = rank.war
+  override def toString = rank.toString + suit.toString
 }
-object PlayingCard {
-  def next(): PlayingCard = PlayingCard(Suit.next(), Rank.next())
+object Card {
+  def next(): Card = Card(Suit.next(), Rank.next())
 }
-
-
 
 /* Ranks */
 sealed trait Rank {
-  def baccaratValue: Int
+  def bacc: Int
+  def war: Int
 }
 object Rank {
-  val AllRanks: Seq[Rank] =
-    Ace.AllRanks ++ Face.AllRanks ++ NumericRank.AllRanks
+  val AllRanks: Vector[Rank] =
+    Vector.empty ++ { Ace :: Face.AllRanks ++ NumericRank.AllRanks }
   def next(): Rank = AllRanks(rand nextInt AllRanks.length)
 }
 case class NumericRank(val rank: Int) extends Rank {
-  override def baccaratValue = rank
+  override def bacc = rank
+  override def war = rank
   override def toString = rank.toString
 }
 object NumericRank {
-  val AllRanks: Seq[Rank] = (2 to 10) map { NumericRank(_) }
+  val AllRanks: Vector[Rank] = Vector.empty ++ { (2 to 10) map { NumericRank(_) } }
 }
 sealed trait NonNumericRank extends Rank
 sealed trait Face extends NonNumericRank {
-  override def baccaratValue = 10
+  override def bacc = 0
+  override def war = this match {
+    case Jack  => 10
+    case Queen => 11
+    case King  => 12
+  }
   override def toString = this match {
     case Jack  => "J"
     case Queen => "Q"
@@ -126,22 +138,22 @@ sealed trait Face extends NonNumericRank {
   }
 }
 object Face {
-  val AllRanks = Seq(Jack, Queen, King)
+  val AllRanks = List(Jack, Queen, King)
 }
 case object Jack extends Face
 case object Queen extends Face
 case object King extends Face
 case object Ace extends NonNumericRank {
-  override def baccaratValue = 1
+  override def bacc = 1
+  override def war = 11
   override def toString = "A"
-  val AllRanks = Seq(Ace)
 }
 
 
 
 /* Suits */
 object Suit {
-  val AllSuits: Seq[Suit] = Seq(Hearts, Clubs, Spades, Diamonds)
+  val AllSuits = Vector(Hearts, Clubs, Spades, Diamonds)
   def next(): Suit = AllSuits(rand nextInt AllSuits.length)
 }
 sealed trait Suit {
