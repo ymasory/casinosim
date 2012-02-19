@@ -33,9 +33,12 @@ abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File
     val numChunks = (roundsPerTable.toDouble/roundsPerChunk.toDouble).ceil.toInt
     (roundsPerChunk, numChunks)
   }
+  val trueNumRounds = roundsPerChunk * numChunks * numTables
   assert(
-    roundsPerChunk * numChunks * numTables >= rounds,
-    "not going to run enough rounds, math error"
+    trueNumRounds >= rounds,
+    "math error, true number of rounds %s is less than requested number %s".format (
+      trueNumRounds, rounds
+    )
   )
 
   def runSim() {
@@ -59,6 +62,7 @@ abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File
     private[this] lazy val out = new BufferedWriter(new FileWriter(outFile))
     out write { "# playing %s on %s tables%n" format (game.name, numTables) }
     out write { "# %s rounds requested%n" format rounds }
+    out write { "# actually running %s rounds%n" format trueNumRounds }
     out write { "# %n" format() }
 
     private[this] var tablesDone = 0
