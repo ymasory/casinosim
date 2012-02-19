@@ -1,68 +1,92 @@
 package com.yuvimasory.casinosim
 
+import java.io.{ BufferedWriter, File, FileWriter }
 import scala.actors.Actor
 
-trait GameState {
-  def ++(that: GameState): GameState
-  def summary(): String
-}
-sealed trait Game {
-  def name: String
-  def play(): GameState
+trait GameRound {
+  def repr: String
 }
 
-abstract class CardGame(val numDecks: Int) extends Game {
-  def createShoe: Shoe = {
+sealed trait Game[A <: GameRound] {
+  val desc: String
+  val name: String
+  def play(): A
+}
+
+abstract class CardGame[A <: GameRound](val numDecks: Int) extends Game[A] {
+  override val desc = "%s with %s decks" format (name, numDecks)
+  protected[this] def createShoe(): Shoe =
     if (numDecks <= 0) new InfiniteShoe()
     else FiniteShoe.next(numDecks)
-  }
 }
-trait DiceGame extends Game
 
-abstract class GameSim(game: Game, emptyState: GameState) extends Actor {
+trait DiceGame[A <: GameRound] extends Game[A] {
+  override val desc = name
+}
 
-  protected[this] var runningState = emptyState
+abstract class GameSim[A <: GameRound](game: Game[A], rounds: Int, outFile: File) {
+
   private[this] val numTables = Runtime.getRuntime.availableProcessors
-  private[this] var tablesDone = 0
-
-  println()
-  println("playing %s on %s tables" format (game.name, numTables))
-  game match {
-    case cardGame: CardGame => println("using " + cardGame.createShoe.summary)
-    case _ =>
+  val (roundsPerChunk, numChunks) = {
+    val roundsPerTable = (rounds.toDouble/numTables.toDouble).ceil.toInt
+    val roundsPerChunk = 1000 min (roundsPerTable.toDouble / 5).ceil.toInt
+    val numChunks = (roundsPerTable.toDouble/roundsPerChunk.toDouble).ceil.toInt
+    (roundsPerChunk, numChunks)
   }
+  assert(
+    roundsPerChunk * numChunks * numTables >= rounds,
+    "not going to run enough rounds, math error"
+  )
 
-  def act() = loop {
-    react {
-      case iters: Int => {
-        println((commaFmt format iters) + " iters requested")
-        val share = (iters.toDouble/numTables.toDouble).ceil.toInt
-        for (i <- 0 until numTables) yield {
-          Actor.actor {
-            val chunk = 250000 min (iters/5).toInt
-            val numChunks = (share.toDouble/chunk.toDouble).ceil.toInt
-            for (i <- 0 until numChunks) {
-              val finalState =
-                (1 to chunk).foldLeft(emptyState) { (acc: GameState, i: Int) =>
-                  val resState: GameState = game play()
-                  resState ++ acc
-                }
-              this ! finalState
+  def runSim() {
+    WriterActor start()
+    for (i <- 0 until numTables) yield {
+      Actor.actor {
+        for (i <- 0 until numChunks) {
+          val rounds =
+            (0 until roundsPerChunk).foldLeft(Nil: List[A]) { (acc, _) =>                
+              (game play()) :: acc
             }
-            tablesDone += 1
+          WriterActor ! rounds
+        }
+        WriterActor ! TableDone
+      }
+    }
+  }
+  
+  object WriterActor extends Actor {
+
+    private[this] lazy val out = new BufferedWriter(new FileWriter(outFile))
+    out write { "# playing %s on %s tables%n" format (game.name, numTables) }
+    out write { "# %s rounds requested%n" format rounds }
+    out write { "# %n" format() }
+
+    private[this] var tablesDone = 0
+
+    def act() = loop {
+      react {
+        case uRounds: List[_] => {
+          if (uRounds.isEmpty) {
+            out write { "# graceful exit%n" format() }
+            out flush()
+            out close()
+            System.exit(0)
+          }
+          else {
+            val rounds = uRounds.asInstanceOf[List[A]]
+            rounds foreach { r =>
+              out write r.repr
+              out newLine()
+            }
           }
         }
-      }
-      case state: GameState => {
-        runningState = runningState ++ state
-        println()
-        println(runningState.summary)
-        if (tablesDone == numTables) {
-          println()
-          println("ALL ACTORS DONE")
-          sys.exit(0)
+        case TableDone => {
+          tablesDone += 1
+          if (tablesDone == numTables) { this ! Nil }
         }
       }
     }
   }
+
+  case object TableDone
 }

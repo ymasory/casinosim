@@ -1,3 +1,4 @@
+/*
 package com.yuvimasory.casinosim
 
 class War(numDecks: Int) extends CardGame(numDecks) {
@@ -80,3 +81,4 @@ class WarSim(game: Game) extends GameSim(game, WarState.empty)
 object WarSim {
   def next(numDecks: Int): WarSim = new WarSim(new War(numDecks))
 }
+*/

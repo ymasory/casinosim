@@ -1,3 +1,4 @@
+/*
 package com.yuvimasory.casinosim
 
 class Baccarat(numDecks: Int) extends CardGame(numDecks) {
@@ -131,3 +132,4 @@ object BaccaratState {
 }
 
 class BaccaratSim() extends GameSim(new Baccarat(6), BaccaratState.empty)
+*/

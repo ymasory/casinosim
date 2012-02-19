@@ -1,50 +1,51 @@
 package com.yuvimasory.casinosim
 
-class Craps() extends DiceGame() {
+class Craps() extends DiceGame[CrapsRound]() {
 
-  override def name = "Craps"
+  override val name = "Craps"
 
-  override def play(): CrapsState = {
-    val comeOut = Craps roll()
-    if (pointEstablished(comeOut)) {
-      val point = 
-      val buf = new scala.collection.mutable.ListBuffer[CrapsRoll]
-      while (true) {
-        val pointRoll = 
+  override def play(): CrapsRound = {
+    val roll = Shooter shoot()
+    CrapsRound {
+      roll :: {
+        roll.comeoutResult match {
+          case p: PointSet          => p resolvePoint()
+          case _: DecisiveResult    => Nil
+        }
       }
     }
-    else CrapsState(List(List(comeOut)))
-  }
-
-  private[this] def sum(crapsRoll: CrapsRoll): Int =
-    crapsRoll._1 + crapsRoll._2
-
-  private[this] def pointEstablished(crapsRoll: CrapsRoll): Boolean = {
-    val tot = sum(crapsRoll)
-    (tot == 7 || tot == 11 || tot == 3 || tot == 2 || tot == 12) == false
   }
 }
 
-object Craps {
-  def roll(): CrapsRoll = (Die roll(), Die roll())
+case class CrapsRoll(val b1: Byte, val b2: Byte) {
+  lazy val repr = "%s/%s" format (b1, b2)
+  lazy val sum = b1 + b2
+  def comeoutResult = sum match {
+    case 7 | 11     => Winner
+    case 2 | 3 | 12 => CrapOut
+    case p          => PointSet(p)
+  }
 }
 
-case class CrapsState(val rounds: List[CrapsRound]) extends GameState {
-
-  override def summary(): String = ""
-  override def ++(g: GameState): CrapsState = {
-    val that = g.asInstanceOf[CrapsState]
-    val nRounds = {
-      that.rounds match {
-        case Nil               => rounds
-        case List(singleRound) => singleRound :: rounds
-        case manyRounds        => rounds ++ manyRounds
-      }
+sealed trait ComeoutResult
+sealed trait DecisiveResult extends ComeoutResult
+case object Winner extends DecisiveResult
+case object CrapOut extends DecisiveResult
+case class PointSet(p: Int) extends ComeoutResult {
+  def resolvePoint(past: List[CrapsRoll] = Nil): List[CrapsRoll] = {
+    val roll = Shooter shoot()
+    val allRolls = roll :: past
+    roll.sum match {
+      case `p` | 7 => allRolls.reverse
+      case n       => this resolvePoint allRolls
     }
-    CrapsState(nRounds)
   }
 }
 
-object CrapsState {
-  def empty: CrapsState = CrapsState(Nil)
+case class CrapsRound(val rolls: List[CrapsRoll]) extends GameRound {
+  override val repr = rolls.map(_.repr).mkString(" ")
+}
+
+object Shooter {
+  def shoot(): CrapsRoll = CrapsRoll(Die roll(), Die roll())
 }
