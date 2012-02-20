@@ -1,8 +1,12 @@
 package com.yuvimasory.casinosim
 
+import java.security.SecureRandom
+
+object Rand extends SecureRandom
+
 /* Dice */
 object Die {
-  def roll(): Byte = (rand.nextInt(6) + 1).toByte
+  def roll(): Byte = (Rand.nextInt(6) + 1).toByte
 }
 
 /* Shoes */
@@ -88,7 +92,7 @@ object AngloDeck {
   private[this] def shuffle(cards: List[Card]): List[Card] = {
     import scala.collection.JavaConverters._
     val jList = new java.util.ArrayList(cards.asJava)
-    java.util.Collections shuffle (jList, rand)
+    java.util.Collections shuffle (jList, Rand)
     jList.asScala.toList
   }
 }
@@ -111,7 +115,7 @@ sealed trait Rank {
 object Rank {
   val AllRanks: Vector[Rank] =
     Vector.empty ++ { Ace :: Face.AllRanks ++ NumericRank.AllRanks }
-  def next(): Rank = AllRanks(rand nextInt AllRanks.length)
+  def next(): Rank = AllRanks(Rand nextInt AllRanks.length)
 }
 case class NumericRank(val rank: Int) extends Rank {
   override def bacc = rank % 10
@@ -152,7 +156,7 @@ case object Ace extends NonNumericRank {
 /* Suits */
 object Suit {
   val AllSuits = Vector(Hearts, Clubs, Spades, Diamonds)
-  def next(): Suit = AllSuits(rand nextInt AllSuits.length)
+  def next(): Suit = AllSuits(Rand nextInt AllSuits.length)
 }
 sealed trait Suit {
 

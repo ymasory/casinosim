@@ -35,11 +35,21 @@ Available games: craps, baccarat, war
     }
   }
 
-  private[this] def analyze(args: Vector[String]) = {
+  private[this] def analyze(args: Vector[String]) {
     val Vector(_, gameName, fileName) = args
-    gameName match {
-      case "craps" => CrapsAnalyzer analyze new File(fileName)
-    }
+    val analyzer: RoundsAnalyzer =
+      gameName match {
+        case "craps"    => CrapsAnalyzer
+        case "baccarat" => CrapsAnalyzer
+        case g          => {
+          Console.err println { "No analyzer available for " + g }
+          Console.err println()
+          Console.err println usage
+          sys exit 1
+        }
+      }
+    val stats = analyzer genStats new File(fileName)
+    println(stats.summary)
   }
 
   private[this] def sim(args: Vector[String]) = {
@@ -55,6 +65,13 @@ Available games: craps, baccarat, war
             case "craps"    => new Craps()
             case "war"      => new War(deckDesc)
             case "baccarat" => new Baccarat(deckDesc)
+            case g          => {
+              val msg = "unknown game: " + g
+              Console.err println msg
+              Console.err println()
+              Console.err println usage
+              sys error msg
+            }
           }
         (game, rounds, file)
       }

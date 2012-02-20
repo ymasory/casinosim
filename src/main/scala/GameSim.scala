@@ -3,37 +3,20 @@ package com.yuvimasory.casinosim
 import java.io.{ BufferedWriter, File, FileWriter }
 import scala.actors.Actor
 
-sealed trait Game {
-  val name: String
-  val key: Option[String] = None
-  def play(): GameRound
-  trait GameRound {
-    def repr: String
-  }
-}
-
-abstract class CardGame(val deckDesc: DeckDescription) extends Game {
-  protected[this] def createShoe(): Shoe = deckDesc match {
-    case FiniteDecks(n) => FiniteShoe next n
-    case InfiniteDecks  => InfiniteShoe next()
-  }
-}
-
-trait DiceGame extends Game
-
 class GameSim(game: Game, rounds: Int, outFile: File) {
 
   private[this] val numTables = Runtime.getRuntime.availableProcessors
   val (roundsPerChunk, numChunks) = {
     val roundsPerTable = (rounds.toDouble/numTables.toDouble).ceil.toInt
     val roundsPerChunk = 1000 min (roundsPerTable.toDouble / 5).ceil.toInt
-    val numChunks = (roundsPerTable.toDouble/roundsPerChunk.toDouble).ceil.toInt
+    val numChunks =
+      (roundsPerTable.toDouble/roundsPerChunk.toDouble).ceil.toInt
     (roundsPerChunk, numChunks)
   }
   val trueNumRounds = roundsPerChunk * numChunks * numTables
   assert(
     trueNumRounds >= rounds,
-    "math error, true number of rounds %s is less than requested number %s".format (
+    "true number of rounds %s less than requested number %s".format (
       trueNumRounds, rounds
     )
   )
@@ -44,8 +27,8 @@ class GameSim(game: Game, rounds: Int, outFile: File) {
       Actor.actor {
         for (i <- 0 until numChunks) {
           val rounds =
-            (0 until roundsPerChunk).foldLeft(Nil: List[game.GameRound]) { (acc, _) =>
-              (game play()) :: acc
+            (0 until roundsPerChunk).foldLeft(Nil: List[game.GameRound]) {
+              (acc, _) => (game play()) :: acc
             }
           WriterActor ! rounds
         }

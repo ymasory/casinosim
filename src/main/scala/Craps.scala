@@ -54,64 +54,24 @@ object Shooter {
   def shoot(): CrapsRoll = CrapsRoll(Die roll(), Die roll())
 }
 
-object CrapsAnalyzer {
-  import java.io.BufferedReader
+object CrapsAnalyzer extends RoundsAnalyzer {
+
+  override type MyStats = CrapsStats
+  override type MyResult = ShooterResult
+  override val emptyStats = CrapsStats(0, 0, 0, 0)
 
   private[this] val Pat = """\d/\d""".r
 
-  def analyze(file: java.io.File) = {
-    val reader = new java.io.BufferedReader(new java.io.FileReader(file))
-    val stats = this loop reader
-
-    val passWins = stats.passWins.toDouble
-    val passLoses = stats.passLoses.toDouble
-    val dontWins = stats.dontWins.toDouble
-    val dontPushes = stats.dontPushes.toDouble
-
-    val total = passWins + passLoses
-    println("TOTAL ROLLS: " + (commaFmt format total))
-    println()
-
-    println("PASS BET")
-    val passWinPercent = passWins/total * 100
-    val passLossPercent = passLoses/total * 100
-    val passHouseEdge = passLossPercent - passWinPercent
-    println("pass wins %s%%" format passWinPercent)
-    println("pass loses %s%%" format passLossPercent)
-    println("pass house advantage: %s%%" format passHouseEdge) 
-
-    println()
-    println("DON'T PASS BET")
-    val dontWinPercent = dontWins/total * 100
-    val dontPushPercent = dontPushes/total * 100
-    val dontLossPercent = passWinPercent
-    val dontHouseEdge = dontLossPercent - dontWinPercent
-    println("don't pass wins %s%%" format dontWinPercent)
-    println("don't pass loses %s%%" format dontLossPercent)
-    println("don't pass pushes %s%%" format dontPushPercent)
-    println("don't pass house advantage: %s%%" format dontHouseEdge) 
-  }
-
-  private[this] def loop(in: BufferedReader, stats: Stats = Stats.empty): Stats = {
-     Option(in readLine()) match {
-       case Some(line) => {
-         val skip = line startsWith "#"
-         if (skip) loop(in, stats)
-         else {
-           val rollStrs: Vector[String] = Vector.empty ++ (Pat findAllIn line)
-           val rolls: List[CrapsRoll] = rollStrs.map { s =>
-             val c1 = s(0).toString
-             val c2 = s(2).toString
-             val b1 = c1.toByte
-             val b2 = c2.toByte
-             CrapsRoll(b1, b2)
-           }.toList
-           val res = ShooterResult fromRolls rolls
-           loop(in, stats :+ res)
-         }
-       }
-       case None => stats
-     }
+  override def parseLine(line: String): ShooterResult = {
+    val rollStrs: Vector[String] = Vector.empty ++ (Pat findAllIn line)
+    val rolls: List[CrapsRoll] = rollStrs.map { s =>
+      val c1 = s(0).toString
+      val c2 = s(2).toString
+      val b1 = c1.toByte
+      val b2 = c2.toByte
+      CrapsRoll(b1, b2)
+    }.toList
+    ShooterResult fromRolls rolls
   }
 
   object ShooterResult {
@@ -130,13 +90,14 @@ object CrapsAnalyzer {
     }
   }
 
-  case class Stats(
+  case class CrapsStats(
     val passWins: Int,
     val passLoses: Int,
     val dontWins: Int,
     val dontPushes: Int
-  ) {
-    def :+(res: ShooterResult): Stats = {
+  ) extends AggregateStats {
+
+    def :+(res: ShooterResult): CrapsStats = {
       val (pw, dw, dp) = res match {
         case _: ShooterWin        => (true, false, false)
         case loss: ShooterLoss    => {
@@ -148,20 +109,56 @@ object CrapsAnalyzer {
           (false, dw, !dw)
         }
       }
-      Stats(
+      CrapsStats(
         passWins = passWins + { if (pw) 1 else 0 },
         passLoses = passLoses + { if (pw) 0 else 1 },
         dontWins = dontWins  + { if (dw) 1 else 0 },
         dontPushes = dontPushes + { if (dp) 1 else 0 }
       )
     }
+
+    override def summary = {
+      val buf = new StringBuffer
+      def append(s: String = "") = buf append { "%s%n" format s }
+
+      val passWins = this.passWins.toDouble
+      val passLoses = this.passLoses.toDouble
+      val dontWins = this.dontWins.toDouble
+      val dontPushes = this.dontPushes.toDouble
+
+      val total = passWins + passLoses
+      append("TOTAL ROLLS: " + (CommaFmt format total))
+      append()
+
+      append("PASS BET")
+      val passWinPercent = passWins/total * 100
+      val passLossPercent = passLoses/total * 100
+      val passHouseEdge = passLossPercent - passWinPercent
+      append("pass wins %s%%" format (DecFmt format passWinPercent))
+      append("pass loses %s%%" format (DecFmt format passLossPercent))
+      append {
+        "pass house advantage: %s%%" format (DecFmt format passHouseEdge)
+      }
+
+      append()
+      append("DON'T PASS BET")
+      val dontWinPercent = dontWins/total * 100
+      val dontPushPercent = dontPushes/total * 100
+      val dontLossPercent = passWinPercent
+      val dontHouseEdge = dontLossPercent - dontWinPercent
+      append("don't pass wins %s%%" format (DecFmt format dontWinPercent))
+      append("don't pass loses %s%%" format (DecFmt format dontLossPercent))
+      append("don't pass pushes %s%%" format (DecFmt format dontPushPercent))
+      append {
+        "don't pass house advantage: %s%%".format {
+          DecFmt format dontHouseEdge
+        }
+      }
+      buf.toString
+    }
   }
 
-  object Stats {
-    val empty = Stats(0, 0, 0, 0)
-  }
-
-  sealed trait ShooterResult
+  sealed trait ShooterResult extends RoundResult
   sealed trait ShooterWin extends ShooterResult
   case object ComeOutWin extends ShooterWin
   case object PointWin extends ShooterWin
