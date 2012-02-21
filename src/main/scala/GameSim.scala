@@ -67,7 +67,7 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
     }
 
     private[this] var tablesDone = 0
-    private[this] var stats = game.EmptyStats
+    private[this] var stats: game.MyStats = game.EmptyStats
     private[this] var numRounds = 0
 
     def act() = loop {
@@ -87,8 +87,9 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
           else {
             val rounds = uRounds.asInstanceOf[List[game.GameRound]]
             numRounds += rounds.length
-            if (fileOpt.isDefined) {
-              for (r <- rounds) record(r.serialize, true)
+            for (r <- rounds) {
+              if (fileOpt.isDefined) record(r.serialize, true)
+              stats = stats :+ r.asInstanceOf[game.MyGameRound]
             }
             if ((numRounds > 0 && numRounds % 1000000 == 0) || numRounds == trueNumRounds) {
               println()
