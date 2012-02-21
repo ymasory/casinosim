@@ -1,3 +1,4 @@
+/*
 package com.yuvimasory.casinosim
 
 class Baccarat(desc: DeckDescription) extends CardGame(desc) {
@@ -64,3 +65,4 @@ class Baccarat(desc: DeckDescription) extends CardGame(desc) {
     trip._1, trip._2, trip._3
   )
 }
+*/

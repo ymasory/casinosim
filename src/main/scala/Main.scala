@@ -6,84 +6,36 @@ object Main {
 
   val usage =
 """
--- Mode 1, simulation --
-Usage: java -jar casinosim.jar game rounds file [num decks]
-E.g., java -jar casinosim.jar craps 10000 craps-output.sim
-E.g., java -jar casinosim.jar war 20000 war-output.sim 6
+Usage: java -jar casinosim.jar game rounds
 
--- Mode 2, analysis --
-Usage: java -jar casinosim.jar analyze game file.sim
-E.g., java -jar casinosim.jar analyze craps my-craps-file.sim
+E.g., java -jar casinosim.jar craps 1000000
 
 -- Misc --
-6 decks is assumed if not specified for a card game
 Available games: craps, baccarat, war
 """.trim
 
 
   def main(args: Array[String]) {
-    if (args contains "-h") println(usage)
+    if (args.length != 2) {
+      Console.err println usage
+      sys exit 1
+    }
     else {
-      if (args.length < 3 || args.length > 4) {
-        Console.err println usage
-        sys exit 1
-      }
+      if (args contains "-h") println(usage)
       else {
-        val vecArgs = Vector.empty ++ args
-        if (args(0) == "analyze") analyze(vecArgs) else sim(vecArgs)
-      }
-    }
-  }
-
-  private[this] def analyze(args: Vector[String]) {
-    val Vector(_, gameName, fileName) = args
-    val analyzer: RoundsAnalyzer =
-      gameName match {
-        case "craps"    => CrapsAnalyzer
-        case "baccarat" => CrapsAnalyzer
-        case g          => {
-          Console.err println { "No analyzer available for " + g }
-          Console.err println()
-          Console.err println usage
-          sys exit 1
-        }
-      }
-    val stats = analyzer genStats new File(fileName)
-    println(stats.summary)
-  }
-
-  private[this] def sim(args: Vector[String]) = {
-    val (game, rounds, file) = {
-      try {
-        val Vector(gameName, roundsStr, fileName, _*) = args
-        val file = new File(fileName)
-        val deckDesc = if (args.length < 4) FiniteDecks(6)
-                       else DeckDescription fromInt args(3).toInt
-        val rounds = roundsStr.toInt
-        val game =
-          gameName match {
-            case "craps"    => new Craps()
-            case "war"      => new War(deckDesc)
-            case "baccarat" => new Baccarat(deckDesc)
-            case g          => {
-              val msg = "unknown game: " + g
-              Console.err println msg
-              Console.err println()
-              Console.err println usage
-              sys error msg
-            }
+        val Array(gameName, roundsStr) = args
+        val game = gameName match {
+          case "craps" => new Craps()
+          case _       => {
+            Console.err println { "unkown game: " + gameName }
+            Console.err println()
+            Console.err println usage
+            sys exit 1
           }
-        (game, rounds, file)
-      }
-      catch {
-        case e => {
-          Console.err println "error parsing arguments"
-          sys exit 1
         }
+        val sim = new GameSim(game, roundsStr.toInt, None)
+        sim runSim()
       }
     }
-    val sim = new GameSim(game, rounds, file)
-    sim runSim()
   }
 }
-

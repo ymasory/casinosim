@@ -1,3 +1,4 @@
+/*
 package com.yuvimasory.casinosim
 
 class War(deckDesc: DeckDescription) extends CardGame(deckDesc) {
@@ -40,3 +41,4 @@ class War(deckDesc: DeckDescription) extends CardGame(deckDesc) {
     val burns: Triple[Card, Card, Card]
   ) extends WarOutcome
 }
+*/
