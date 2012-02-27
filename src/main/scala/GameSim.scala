@@ -58,8 +58,8 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
       case c: CardGame => record("using %s" format c.deckDesc)
       case _ =>
     }
-    record("%s rounds requested" format (CommaFmt format rounds))
-    record("actually going to run %s rounds" format (CommaFmt format trueNumRounds))
+    record("%s rounds requested" format rounds.comma)
+    record("actually going to run %s rounds" format trueNumRounds.comma)
     game.RoundKey match {
       case Some(key) => "format: %s" format key
       case None =>
@@ -94,7 +94,7 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
               println()
               println("-" * 80)
               println(java.util.Calendar.getInstance.getTime)
-              println("Summary After %s Rounds " format (CommaFmt format numRounds))
+              println("Summary After %s Rounds " format numRounds.comma)
               println("-" * 80)
               println(counter.summary)
               println()

@@ -45,7 +45,7 @@ sealed trait Game {
       for (wager <- wagers) {
         val total = counter total wager
         buf append {
-          "# %s over %s trials #%n" format (wager.Name, CommaFmt format total)
+          "# %s over %s trials #%n" format (wager.Name, total.comma)
         }
         buf append { "## outcome / total / probability ##%n" format() }
         val outcomeCounts = counter outcomeCounts wager
@@ -53,21 +53,19 @@ sealed trait Game {
           val prob = (counter prob (wager, outcome)) * 100
           buf append {
             "%s / %s / %s%%%n" format (
-              outcome,
-              CommaFmt format count,
-              DecFmt format prob
+              outcome, count.comma, prob.pretty
             )
           }
         }
         buf append { "## key figures ##%n" format() }
         val ev = counter expectedValue wager
-        buf append { "Expected Value = %s%n" format (DecFmt format ev) }
+        buf append { "Expected Value = %s%n" format ev.pretty }
         val edge = (ev * 100) * -1
-        buf append { "House Advantage = %s%%%n" format (DecFmt format edge) }
+        buf append { "House Advantage = %s%%%n" format edge.pretty }
         val payout = 100 - edge
-        buf append { "Payout = %s%%%n" format (DecFmt format payout) }
+        buf append { "Payout = %s%%%n" format payout.pretty }
         val variance = counter variance wager
-        buf append { "Variance = %s%n" format (DecFmt format variance) }
+        buf append { "Variance = %s%n" format variance.pretty }
         buf append { "%n" format() }
       }
       buf.toString
