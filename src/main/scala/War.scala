@@ -18,7 +18,7 @@ class War(deckDesc: DeckDescription) extends CardGame(deckDesc) {
       case GoToWarResult((p1, p2), (d1, d2), (b1, b2, b3)) =>
         "%s %s - %s %s %s - %s %s" format (p1, d1, b1, b2, b3, p2, d2)
     }
-    override def outcomes: List[(WarWager, Int)] = List((MainWager, res.outcome))
+    override def outcomes: List[(WarWager, Double)] = List((MainWager, res.outcome))
   }
 
   sealed trait WarWager extends Wager

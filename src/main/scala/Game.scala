@@ -18,7 +18,7 @@ sealed trait Game {
 
   trait GameRound {
     def serialize: String
-    def outcomes: List[Pair[Wager, Int]]
+    def outcomes: List[Pair[Wager, Double]]
   }
 
   trait Wager {
@@ -74,13 +74,13 @@ sealed trait Game {
     }
   }
 
-  case class Counter(private val map: Map[Pair[Wager, Int], Int] = Map.empty) {
+  case class Counter(private val map: Map[Pair[Wager, Double], Int] = Map.empty) {
 
     def wagers: List[Wager] = {
       map.keys.map { _._1 }
     }.toList.distinct.sortWith(_.Name < _.Name)
 
-    def outcomeCounts(wager: Wager): List[(Int, Int)] = {
+    def outcomeCounts(wager: Wager): List[(Double, Int)] = {
       map.keys.toList.flatMap { pair =>
         val Pair(w, outcome) = pair
         val count = map(pair)
@@ -88,9 +88,9 @@ sealed trait Game {
       }
     }.sortWith(_._1 < _._1)
 
-    def increment(wager: Wager, outcome: Int) = count(wager, outcome, 1)
+    def increment(wager: Wager, outcome: Double) = count(wager, outcome, 1)
 
-    def count(wager: Wager, outcome: Int, count: Int): Counter = {
+    def count(wager: Wager, outcome: Double, count: Int): Counter = {
       val pair = (wager, outcome)
       val nCount: Int = map.get(pair) match {
         case None           => count
@@ -109,7 +109,7 @@ sealed trait Game {
       }
     }
 
-    def prob(wager: Wager, outcome: Int) = {
+    def prob(wager: Wager, outcome: Double) = {
       val denom = total(wager).toDouble
       val numer = {
         map.get((wager, outcome)) match {

@@ -89,12 +89,12 @@ class Craps() extends DiceGame() {
 
   /* internal */
   private[this] sealed trait CrapsResult {
-    def outcomeOf(w: CrapsWager): Int
+    def outcomeOf(w: CrapsWager): Double
   }
   private sealed trait ShooterWin extends CrapsResult {
     override def outcomeOf(w: CrapsWager) = w match {
-      case Pass     => 1
-      case DontPass => -1
+      case Pass     => 1D
+      case DontPass => -1D
     }
   }
   private[this] case object ComeoutWin extends ShooterWin
@@ -102,15 +102,15 @@ class Craps() extends DiceGame() {
   private[this] sealed trait ShooterLoss extends CrapsResult
   private[this] case object SevenOut extends ShooterLoss {
     override def outcomeOf(w: CrapsWager) = w match {
-      case Pass     => -1
-      case DontPass => 1
+      case Pass     => -1D
+      case DontPass => 1D
     }
   }
   private[this] sealed trait CrapOut extends ShooterLoss
   private[this] case object CrapOut23 extends CrapOut {
     override def outcomeOf(w: CrapsWager) = w match {
-      case Pass     => -1
-      case DontPass => 1
+      case Pass     => -1D
+      case DontPass => 1D
     }
   }
   private[this] case object CrapOut12 extends CrapOut {

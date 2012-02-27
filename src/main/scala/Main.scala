@@ -25,8 +25,9 @@ Available games: craps, baccarat, war
       else {
         val Array(gameName, roundsStr) = args
         val game = gameName match {
-          case "craps"    => new Craps()
-          case "coinflip" => new CoinFlip()
+          case "baccarat" => new Baccarat(FiniteDecks(8))
+          case "coinflip" => new CoinFlip
+          case "craps"    => new Craps
           case "war"      => new War(FiniteDecks(6))
           case _       => {
             Console.err println { "unkown game: " + gameName }

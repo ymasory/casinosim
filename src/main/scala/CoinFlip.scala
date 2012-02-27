@@ -24,8 +24,8 @@ class CoinFlip() extends CoinGame() {
     override def outcomes = {
       AllWagers.map { wager =>
         val outcome = flip match {
-          case Heads => if (wager == HeadsUp) 1 else -1
-          case Tails => if (wager == TailsUp) 1 else -1
+          case Heads => if (wager == HeadsUp) 1D else -1D
+          case Tails => if (wager == TailsUp) 1D else -1D
         }
         (wager, outcome)
       }
