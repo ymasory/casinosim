@@ -14,12 +14,15 @@ class CoinFlip() extends CoinGame() {
 
   class CoinFlipRound(flip: CoinFlipResult) extends GameRound {
 
+    val AllWagers = List(HeadsUp, TailsUp)
+
     override def serialize = flip match {
       case Heads => "H"
       case Tails => "T"
     }
+
     override def outcomes = {
-      List(HeadsUp, TailsUp).map { wager =>
+      AllWagers.map { wager =>
         val outcome = flip match {
           case Heads => if (wager == HeadsUp) 1 else -1
           case Tails => if (wager == TailsUp) 1 else -1
