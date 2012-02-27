@@ -6,11 +6,9 @@ class Craps() extends DiceGame() {
 
   override type MyWager = CrapsWager
   override type MyGameRound = CrapsRound
-  override type MyStats = CrapsStats
   override type MyPlayer = CrapsPlayer
 
   override val Name = "Craps"
-  override val EmptyStats = new CrapsStats(0, 0, 0, 0, 0)
 
   override val player: CrapsPlayer = new CrapsPlayer()
 
@@ -83,35 +81,6 @@ class Craps() extends DiceGame() {
     new CrapsRound(rolls)
   }
   */
-
-  class CrapsStats(comeoutWins: Int, pointWins: Int, crapOut12s: Int, crapOut23s: Int, sevenOuts: Int) extends AggregateStats {
-
-    override def :+(round: CrapsRound): CrapsStats = round.res match {
-      case ComeoutWin =>
-        new CrapsStats(comeoutWins + 1, pointWins, crapOut12s, crapOut23s, sevenOuts)
-      case PointWin   =>
-        new CrapsStats(comeoutWins, pointWins + 1, crapOut12s, crapOut23s, sevenOuts)
-      case CrapOut12  =>
-        new CrapsStats(comeoutWins, pointWins, crapOut12s + 1, crapOut23s, sevenOuts)
-      case CrapOut23  =>
-        new CrapsStats(comeoutWins, pointWins, crapOut12s, crapOut23s + 1, sevenOuts)
-      case SevenOut   =>
-        new CrapsStats(comeoutWins, pointWins, crapOut12s, crapOut23s, sevenOuts + 1)
-    }
-
-    override def summary = {
-      val cw = comeoutWins.toDouble
-      val pw = pointWins.toDouble
-      val c12 = crapOut12s.toDouble
-      val c23 = crapOut23s.toDouble
-      val so = sevenOuts.toDouble
-      val tot = cw + pw + c12 + c23 + so
-      val probCw = cw/tot
-      val probPw = pw/tot
-      val probWin = probCw + probPw
-      "Probability Comeout Win: %s%n" format probWin
-    }
-  }
 
   /* private */
   private[this] object Shooter {

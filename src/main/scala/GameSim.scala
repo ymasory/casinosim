@@ -8,7 +8,6 @@ import scala.annotation.tailrec
 class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
 
   private[this] val numTables = Runtime.getRuntime.availableProcessors
-  private[this] val CommaFmt = new java.text.DecimalFormat("###,###,###,###")
 
   val (roundsPerChunk, numChunks) = {
     val roundsPerTable = (rounds.toDouble/numTables.toDouble).ceil.toInt
@@ -67,7 +66,7 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
     }
 
     private[this] var tablesDone = 0
-    private[this] var stats: game.MyStats = game.EmptyStats
+    private[this] var counter = new game.OutcomeCounter
     private[this] var numRounds = 0
 
     def act() = loop {
@@ -89,7 +88,7 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
             numRounds += rounds.length
             for (r <- rounds) {
               if (fileOpt.isDefined) record(r.serialize, true)
-              stats = stats :+ r.asInstanceOf[game.MyGameRound]
+              counter = counter :+ r.asInstanceOf[game.MyGameRound]
             }
             if ((numRounds > 0 && numRounds % 1000000 == 0) || numRounds == trueNumRounds) {
               println()
@@ -97,7 +96,7 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
               println(java.util.Calendar.getInstance.getTime)
               println("Summary After %s Rounds " format (CommaFmt format numRounds))
               println("-" * 80)
-              println(stats.summary)
+              println(counter.summary)
               println()
             }
           }
@@ -112,3 +111,5 @@ class GameSim(game: Game, rounds: Int, fileOpt: Option[File]) {
 
   case object TableDone
 }
+
+

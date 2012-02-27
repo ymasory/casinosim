@@ -100,7 +100,7 @@ object AngloDeck {
 /* Cards */
 case class Card(suit: Suit, rank: Rank) {
   def bacc = rank.bacc
-  def war = rank.war
+  def aceHigh = rank.aceHigh
   override def toString = rank.toString + suit.toString
 }
 object Card {
@@ -110,17 +110,17 @@ object Card {
 /* Ranks */
 sealed trait Rank {
   def bacc: Int
-  def war: Int
+  def aceHigh: Int
 }
 object Rank {
   val AllRanks: Vector[Rank] =
     Vector.empty ++ { Ace :: Face.AllRanks ++ NumericRank.AllRanks }
   def next(): Rank = AllRanks(Rand nextInt AllRanks.length)
 }
-case class NumericRank(val rank: Int) extends Rank {
-  override def bacc = rank % 10
-  override def war = rank
-  override def toString = rank.toString
+case class NumericRank(val pip: Int) extends Rank {
+  override def bacc = pip % 10
+  override def aceHigh = pip
+  override def toString = pip.toString
 }
 object NumericRank {
   val AllRanks: Vector[Rank] = Vector.empty ++ { (2 to 10) map { NumericRank(_) } }
@@ -128,7 +128,7 @@ object NumericRank {
 sealed trait NonNumericRank extends Rank
 sealed trait Face extends NonNumericRank {
   override def bacc = 0
-  override def war = this match {
+  override def aceHigh = this match {
     case Jack  => 10
     case Queen => 11
     case King  => 12
@@ -147,7 +147,7 @@ case object Queen extends Face
 case object King extends Face
 case object Ace extends NonNumericRank {
   override def bacc = 1
-  override def war = 11
+  override def aceHigh = 11
   override def toString = "A"
 }
 
