@@ -27,6 +27,7 @@ Available games: craps, baccarat, war
         val game = gameName match {
           case "craps"    => new Craps()
           case "coinflip" => new CoinFlip()
+          case "war"      => new War(FiniteDecks(6))
           case _       => {
             Console.err println { "unkown game: " + gameName }
             Console.err println()
