@@ -67,7 +67,7 @@ sealed trait Game {
         val payout = 100 - edge
         buf append { "Payout = %s%%%n" format (DecFmt format payout) }
         val variance = counter variance wager
-        buf append { "Variance = %s%%%n" format (DecFmt format variance) }
+        buf append { "Variance = %s%n" format (DecFmt format variance) }
         buf append { "%n" format() }
       }
       buf.toString
@@ -125,7 +125,16 @@ sealed trait Game {
       acc + { if (wager == aIn) map(k) else 0 }
     }
 
-    def variance(wager: Wager) = 1D
+    def variance(wager: Wager) = {
+      val ev = expectedValue(wager)
+      val numer = outcomeCounts(wager).foldLeft(0D) { (acc, pair) =>
+        val Pair(outcome, count) = pair
+        val squaredDist = java.lang.Math.pow((outcome - ev), 2)
+        acc + (squaredDist * count)
+      }
+      val denom = total(wager)
+      numer/denom
+    }
   }
 }
 
