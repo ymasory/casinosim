@@ -6,11 +6,21 @@ organization := "com.yuvimasory"
 version := "0.1.0-SNAPSHOT"
 
 //SCALA VERSIONS AND OPTIONS
-scalaVersion := "2.9.2"
+scalaVersion := "2.10.0"
 
-scalacOptions ++= Seq("-deprecation", "-unchecked")
+scalacOptions ++= Seq(
+  "-feature",
+  "-language:implicitConversions",
+  "-deprecation",
+  "-unchecked"
+)
 
-javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation")
+javacOptions ++= Seq(
+  "-Xlint:unchecked",
+  "-Xlint:deprecation"
+)
+
+libraryDependencies += "org.scala-lang" % "scala-actors" % "2.10.0"
 
 //ENTRY POINT
 mainClass in (Compile, packageBin) := Some("com.yuvimasory.casinosim.Main")
